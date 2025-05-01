@@ -53,6 +53,25 @@
       <p id="milestoneMessage" class="text-yellow-700 mt-2 hidden"></p>
     </div>
     
+    <!-- Suggested Ingredients Dropdown -->
+    <div class="mb-4">
+      <label for="ingredientSelect" class="block text-sm font-medium text-gray-700 mb-1">Suggested Ingredients:</label>
+      <select id="ingredientSelect" multiple class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-20 overflow-y-auto">
+        <option value="" disabled selected>Select an ingredient</option>
+        <option value="chicken">Chicken</option>
+        <option value="rice">Rice</option>
+        <option value="spinach">Spinach</option>
+        <option value="soy sauce">Soy Sauce</option>
+        <option value="carrots">Carrots</option>
+        <option value="potatoes">Potatoes</option>
+        <option value="broccoli">Broccoli</option>
+        <option value="pasta">Pasta</option>
+        <option value="tomatoes">Tomatoes</option>
+        <option value="cheese">Cheese</option>
+      </select>
+      <p class="text-sm text-gray-500 mt-1">Hold Ctrl (or Cmd) to select multiple ingredients.</p>
+    </div>
+    
     <div class="mb-4">
       <input id="ingredientsInput" type="text" placeholder="e.g., chicken, spinach, soy sauce" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
     </div>
@@ -144,14 +163,14 @@
 
     // Validate ingredients (letters, spaces, commas only)
     function validateIngredients(input) {
-      if (!input.trim()) {
-        return { valid: false, message: 'Oops, please enter at least one ingredient (e.g., chicken, rice)!' };
+      if (!input.trim() && !document.getElementById('ingredientSelect').selectedOptions.length) {
+        return { valid: false, message: 'Oops, please enter or select at least one ingredient (e.g., chicken, rice)!' };
       }
       const validPattern = /^[a-zA-Z\s,'-]*$/;
-      if (!validPattern.test(input)) {
+      if (input && !validPattern.test(input)) {
         return { valid: false, message: 'Please use valid ingredients (letters, spaces, commas only, e.g., chicken, rice)!' };
       }
-      const ingredients = input.split(',').map(item => item.trim());
+      const ingredients = input.split(',').map(item => item.trim()).filter(item => item);
       if (ingredients.some(item => !item)) {
         return { valid: false, message: 'Ingredients can’t be empty or just spaces. Try again (e.g., chicken, rice)!' };
       }
@@ -535,13 +554,15 @@
     async function findRecipes() {
       console.log('Find Recipes clicked!'); // Debug
       const input = document.getElementById('ingredientsInput').value.trim();
-      console.log('Ingredients:', input); // Debug
+      console.log('Manual input:', input); // Debug
       const resultsDiv = document.getElementById('results');
       const actionButtonsDiv = document.getElementById('actionButtons');
+      const select = document.getElementById('ingredientSelect');
+      const selectedOptions = Array.from(select.selectedOptions).map(option => option.value);
 
       // Validate inputs
       const validation = validateIngredients(input);
-      if (!validation.valid) {
+      if (!validation.valid && selectedOptions.length === 0) {
         resultsDiv.innerHTML = `<p class="text-red-500 bg-red-50 p-3 rounded-md">${validation.message}</p>`;
         console.log('Validation failed:', validation.message); // Debug
         document.getElementById('ingredientsInput').value = ''; // Clear invalid input
@@ -558,8 +579,14 @@
       console.log('Reset usedCuisines, generatedRecipes, and recipeRatings'); // Debug
 
       // Store inputs
-      userIngredients = sanitizeInput(input).toLowerCase().split(',').map(item => item.trim());
-      console.log('Processed ingredients:', userIngredients); // Debug
+      userIngredients = [];
+      if (input) {
+        userIngredients = sanitizeInput(input).toLowerCase().split(',').map(item => item.trim());
+      }
+      if (selectedOptions.length > 0) {
+        userIngredients = [...userIngredients, ...selectedOptions.map(item => item.toLowerCase())];
+      }
+      console.log('Processed ingredients (manual + selected):', userIngredients); // Debug
 
       // Generate first recipe
       await generateRecipe();
@@ -577,6 +604,7 @@
       const resultsDiv = document.getElementById('results');
       const actionButtonsDiv = document.getElementById('actionButtons');
       const ingredientsInput = document.getElementById('ingredientsInput');
+      const ingredientSelect = document.getElementById('ingredientSelect');
 
       // Reset state
       userIngredients = [];
@@ -590,6 +618,7 @@
       resultsDiv.innerHTML = '';
       actionButtonsDiv.classList.add('hidden');
       ingredientsInput.value = '';
+      ingredientSelect.selectedIndex = 0; // Reset dropdown to default
       updateSavedRecipes();
       updatePointsDisplay();
       console.log('State reset'); // Debug
