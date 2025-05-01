@@ -41,6 +41,18 @@
     <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">Leftover Ingredients Chef</h1>
     <p class="text-center text-gray-600 mb-4">Enter your leftover ingredients (e.g., chicken, spinach, soy sauce), separated by commas, and get recipe ideas!</p>
     
+    <!-- Leftover Challenge Section -->
+    <div id="leftoverChallenge" class="mb-4 p-4 bg-yellow-50 rounded-md text-center">
+      <h2 class="text-lg font-bold text-yellow-800 flex items-center justify-center">
+        🍳 Leftover Challenge 🍳
+        <span class="ml-2 text-sm bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">New!</span>
+      </h2>
+      <p class="text-yellow-700 mt-2">Earn points by using more ingredients!</p>
+      <p class="text-yellow-700">1-2 ingredients: 2 pts | 3-4 ingredients: 5 pts | 5+ ingredients: 10 pts</p>
+      <p id="totalPoints" class="text-lg font-bold text-yellow-800 mt-2">Total Points: 0</p>
+      <p id="milestoneMessage" class="text-yellow-700 mt-2 hidden"></p>
+    </div>
+    
     <div class="mb-4">
       <input id="ingredientsInput" type="text" placeholder="e.g., chicken, spinach, soy sauce" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
     </div>
@@ -69,6 +81,7 @@
     let recipeCount = 0;
     let usedCuisines = [];
     let generatedRecipes = [];
+    let totalPoints = parseInt(localStorage.getItem('totalPoints') || '0'); // Initialize points from localStorage
     const maxRecipes = 5;
 
     // Cuisine to emoji mapping
@@ -83,6 +96,44 @@
 
     // Store ratings for generated recipes (not saved yet)
     let recipeRatings = {};
+
+    // Update total points display
+    function updatePointsDisplay() {
+      const totalPointsElement = document.getElementById('totalPoints');
+      totalPointsElement.textContent = `Total Points: ${totalPoints}`;
+      localStorage.setItem('totalPoints', totalPoints.toString());
+      console.log('Updated total points:', totalPoints); // Debug
+
+      // Check for milestone messages
+      const milestoneMessageElement = document.getElementById('milestoneMessage');
+      if (totalPoints >= 50) {
+        milestoneMessageElement.textContent = "You're a Leftover Legend! 🎉";
+        milestoneMessageElement.classList.remove('hidden');
+      } else if (totalPoints >= 25) {
+        milestoneMessageElement.textContent = "Great job, Master Chef! 👨‍🍳";
+        milestoneMessageElement.classList.remove('hidden');
+      } else if (totalPoints >= 10) {
+        milestoneMessageElement.textContent = "Nice work, Kitchen Star! ⭐";
+        milestoneMessageElement.classList.remove('hidden');
+      } else {
+        milestoneMessageElement.classList.add('hidden');
+      }
+    }
+
+    // Award points based on number of ingredients
+    function awardPoints(ingredientsCount) {
+      let points = 0;
+      if (ingredientsCount <= 2) {
+        points = 2;
+      } else if (ingredientsCount <= 4) {
+        points = 5;
+      } else {
+        points = 10;
+      }
+      totalPoints += points;
+      console.log(`Awarded ${points} points for ${ingredientsCount} ingredients. Total now: ${totalPoints}`); // Debug
+      updatePointsDisplay();
+    }
 
     // Simple input sanitization to prevent XSS
     function sanitizeInput(input) {
@@ -425,6 +476,9 @@
           console.log('Added cuisine to used list:', recipe.cuisine); // Debug
         }
 
+        // Award points based on number of ingredients
+        awardPoints(userIngredients.length);
+
         // Prepare recipe card HTML with Save Recipe button, rating, undo rating, and cuisine badge
         const recipeHtml = recipe.name && recipe.instructions !== 'No recipe possible with these ingredients.'
           ? `
@@ -530,17 +584,21 @@
       usedCuisines = [];
       generatedRecipes = [];
       recipeRatings = {};
+      totalPoints = 0; // Reset points
       localStorage.removeItem('savedRecipes');
+      localStorage.removeItem('totalPoints'); // Clear points from storage
       resultsDiv.innerHTML = '';
       actionButtonsDiv.classList.add('hidden');
       ingredientsInput.value = '';
       updateSavedRecipes();
+      updatePointsDisplay();
       console.log('State reset'); // Debug
     }
 
-    // Initialize saved recipes on page load
+    // Initialize saved recipes and points on page load
     document.addEventListener('DOMContentLoaded', () => {
       updateSavedRecipes();
+      updatePointsDisplay();
     });
   </script>
 </body>
