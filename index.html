@@ -51,6 +51,9 @@
       <p class="text-yellow-700">1-2 ingredients: 2 pts | 3-4 ingredients: 5 pts | 5+ ingredients: 10 pts</p>
       <p id="totalPoints" class="text-lg font-bold text-yellow-800 mt-2">Total Points: 0</p>
       <p id="milestoneMessage" class="text-yellow-700 mt-2 hidden"></p>
+      <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+        <div id="progressBar" class="bg-yellow-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+      </div>
     </div>
     
     <!-- Suggested Ingredients Dropdown -->
@@ -116,15 +119,22 @@
     // Store ratings for generated recipes (not saved yet)
     let recipeRatings = {};
 
-    // Update total points display
+    // Update total points display and progress bar
     function updatePointsDisplay() {
       const totalPointsElement = document.getElementById('totalPoints');
+      const progressBar = document.getElementById('progressBar');
+      const milestoneMessageElement = document.getElementById('milestoneMessage');
+
+      // Update total points
       totalPointsElement.textContent = `Total Points: ${totalPoints}`;
       localStorage.setItem('totalPoints', totalPoints.toString());
       console.log('Updated total points:', totalPoints); // Debug
 
-      // Check for milestone messages
-      const milestoneMessageElement = document.getElementById('milestoneMessage');
+      // Define milestones
+      const milestones = [10, 25, 50];
+      let nextMilestone = milestones.find(m => totalPoints < m) || (Math.floor(totalPoints / 50) + 1) * 50;
+
+      // Update milestone message
       if (totalPoints >= 50) {
         milestoneMessageElement.textContent = "You're a Leftover Legend! 🎉";
         milestoneMessageElement.classList.remove('hidden');
@@ -137,6 +147,13 @@
       } else {
         milestoneMessageElement.classList.add('hidden');
       }
+
+      // Calculate progress toward the next milestone
+      const previousMilestone = totalPoints < 10 ? 0 : milestones.filter(m => m <= totalPoints).pop() || (Math.floor(totalPoints / 50) * 50);
+      const progressRange = nextMilestone - previousMilestone;
+      const progress = ((totalPoints - previousMilestone) / progressRange) * 100;
+      progressBar.style.width = `${progress}%`;
+      console.log(`Progress: ${progress}% toward ${nextMilestone} (from ${previousMilestone})`); // Debug
     }
 
     // Award points based on number of ingredients
