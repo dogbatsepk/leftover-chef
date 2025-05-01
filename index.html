@@ -20,15 +20,23 @@
     .hero-image {
       animation: zoomIn 2s ease-in-out forwards;
     }
+    .hero-overlay-text {
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    }
   </style>
 </head>
-<body class="bg-gradient-to-br from-yellow-100 to-orange-200 min-h-screen flex items-center justify-center p-4 relative">
-  <!-- Overlay for readability -->
+<body class="bg-gradient-to-br from-yellow-100 to-orange-200 min-h-screen flex items-center justify-center p-4 relative">  
   <div class="absolute inset-0 bg-gray-900 bg-opacity-20 z-[-1]"></div>
   <div class="bg-white bg-opacity-95 rounded-lg shadow-lg p-6 w-full max-w-md relative z-10">
-    <!-- Hero Image -->
-    <img src="hero.jpg" alt="From Fridge to Feast" class="w-full h-48 object-cover rounded-t-lg shadow-md hero-image mb-4">
-    
+    <!-- Hero Image with Overlay -->
+    <div class="relative mb-4">
+      <img src="hero.jpg" alt="From Fridge to Feast" class="w-full h-48 object-cover rounded-t-lg shadow-md hero-image">
+      <div class="absolute inset-0 flex items-center justify-center text-white text-2xl font-bold bg-black bg-opacity-50 rounded-t-lg 
+      hero-overlay-text">
+      From Fridge to Feast!
+    </div>
+   </div>  
+
     <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">Leftover Ingredients Chef</h1>
     <p class="text-center text-gray-600 mb-4">Enter your leftover ingredients (e.g., chicken, spinach, soy sauce), separated by commas, and get recipe ideas!</p>
     
