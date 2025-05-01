@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leftover Ingredients Chef</title>
+  <link href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-up {
+      animation: fadeInUp 0.7s ease-out forwards !important;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-yellow-100 to-orange-200 min-h-screen flex items-center justify-center p-4 relative">
+  <!-- Overlay for readability -->
+  <div class="absolute inset-0 bg-gray-900 bg-opacity-20 z-[-1]"></div>
+  <div class="bg-white bg-opacity-95 rounded-lg shadow-lg p-6 w-full max-w-md relative z-10">
+    <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">Leftover Ingredients Chef</h1>
+    <p class="text-center text-gray-600 mb-4">Enter your leftover ingredients (e.g., chicken, spinach, soy sauce), separated by commas, and get recipe ideas!</p>
+    
+    <div class="mb-4">
+      <input id="ingredientsInput" type="text" placeholder="e.g., chicken, spinach, soy sauce" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    
+    <button onclick="findRecipes()" class="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition">Find Recipes</button>
+    
+    <div id="results" class="mt-6"></div>
+    <div id="actionButtons" class="mt-4 hidden flex justify-between">
+      <button onclick="generateAnother()" class="w-1/2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600 transition mr-2">Generate Another</button>
+      <button onclick="clearAll()" class="w-1/2 bg-red-500 text-white p-2 rounded-md hover:bg-red-600 transition">Clear All</button>
+    </div>
+    <div id="savedRecipes" class="mt-6 hidden">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">Saved Recipes</h2>
+      <button id="downloadRecipes" onclick="downloadSavedRecipes()" class="mb-4 bg-blue-100 text-blue-600 px-3 py-1 rounded-md hover:bg-blue-200 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>Download Recipes (PDF)</button>
+      <div id="savedRecipesList"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    // Debug: Log when script loads
+    console.log('Script loaded!');
+
+    // Store state
+    let userIngredients = [];
+    let recipeCount = 0;
+    let usedCuisines = [];
+    let generatedRecipes = [];
+    const maxRecipes = 5;
+
+    // Cuisine to emoji mapping
+    const cuisineEmojis = {
+      'Mexican': '🌮',
+      'Italian': '🍝',
+      'Asian': '🍣',
+      'Indian': '🍛',
+      'American': '🍔',
+      'Mediterranean': '🥙'
+    };
+
+    // Store ratings for generated recipes (not saved yet)
+    let recipeRatings = {};
+
+    // Simple input sanitization to prevent XSS
+    function sanitizeInput(input) {
+      const div = document.createElement('div');
+      div.textContent = input;
+      return div.innerHTML.replace(/[<>&;]/g, '');
+    }
+
+    // Validate ingredients (letters, spaces, commas only)
+    function validateIngredients(input) {
+      if (!input.trim()) {
+        return { valid: false, message: 'Oops, please enter at least one ingredient (e.g., chicken, rice)!' };
+      }
+      const validPattern = /^[a-zA-Z\s,'-]*$/;
+      if (!validPattern.test(input)) {
+        return { valid: false, message: 'Please use valid ingredients (letters, spaces, commas only, e.g., chicken, rice)!' };
+      }
+      const ingredients = input.split(',').map(item => item.trim());
+      if (ingredients.some(item => !item)) {
+        return { valid: false, message: 'Ingredients can’t be empty or just spaces. Try again (e.g., chicken, rice)!' };
+      }
+      return { valid: true, message: '' };
+    }
+
+    // Clean API response to remove Markdown and backticks
+    function cleanJsonResponse(response) {
+      let cleaned = response.trim();
+      cleaned = cleaned.replace(/```json\s*\n?/, '').replace(/```\s*$/, '');
+      cleaned = cleaned.replace(/^`|`$/g, '');
+      cleaned = cleaned.trim();
+      return cleaned;
+    }
+
+    // Get current rating for a recipe
+    function getRecipeRating(recipeId) {
+      return recipeRatings[recipeId] || 0;
+    }
+
+    // Handle rating a recipe
+    function rateRecipe(recipeId, rating) {
+      console.log(`Rating recipe ${recipeId} with ${rating} stars`); // Debug
+      recipeRatings[recipeId] = rating;
+      const card = document.querySelector(`[data-recipe-id="${recipeId}"]`);
+      const starsContainer = card.querySelector('.stars');
+      const undoButton = card.querySelector('.undo-rating');
+      for (let i = 1; i <= 5; i++) {
+        const star = starsContainer.querySelector(`[data-star="${i}"]`);
+        star.innerHTML = i <= rating ? '★' : '☆'; // Filled star: ★, Empty star: ☆
+        star.classList.toggle('text-yellow-500', i <= rating);
+        star.classList.toggle('text-gray-300', i > rating);
+      }
+      // Show the undo rating button
+      undoButton.classList.remove('hidden');
+    }
+
+    // Handle undoing a rating
+    function undoRating(recipeId) {
+      console.log(`Undoing rating for recipe ${recipeId}`); // Debug
+      recipeRatings[recipeId] = 0;
+      const card = document.querySelector(`[data-recipe-id="${recipeId}"]`);
+      const starsContainer = card.querySelector('.stars');
+      const undoButton = card.querySelector('.undo-rating');
+      for (let i = 1; i <= 5; i++) {
+        const star = starsContainer.querySelector(`[data-star="${i}"]`);
+        star.innerHTML = '☆'; // Empty star: ☆
+        star.classList.remove('text-yellow-500');
+        star.classList.add('text-gray-300');
+      }
+      // Hide the undo rating button
+      undoButton.classList.add('hidden');
+    }
+
+    // Save recipe to localStorage with rating
+    function saveRecipe(recipe, card) {
+      console.log('Attempting to save recipe:', recipe.name); // Debug
+      const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+      const recipeKey = `${recipe.name}-${recipe.cuisine}`.toLowerCase();
+      const rating = getRecipeRating(recipe.id);
+      const recipeWithRating = { ...recipe, rating };
+      const existingIndex = savedRecipes.findIndex(r => `${r.name}-${r.cuisine}`.toLowerCase() === recipeKey);
+      if (existingIndex !== -1) {
+        // Update existing recipe with new rating
+        savedRecipes[existingIndex] = recipeWithRating;
+        console.log('Updated existing recipe with new rating:', recipe.name, rating); // Debug
+      } else {
+        savedRecipes.push(recipeWithRating);
+        console.log('Saved recipe with rating:', recipe.name, rating); // Debug
+      }
+      localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
+      updateSavedRecipes();
+      const confirmation = card.querySelector('.save-confirmation');
+      confirmation.textContent = 'Recipe saved! ';
+      confirmation.classList.remove('hidden', 'text-yellow-600', 'bg-yellow-50', 'text-blue-600', 'bg-blue-50');
+      confirmation.classList.add('text-green-600', 'bg-green-50', 'p-2', 'rounded-md');
+      const undoButton = document.createElement('button');
+      undoButton.textContent = 'Undo';
+      undoButton.className = 'text-blue-600 underline hover:text-blue-800';
+      undoButton.onclick = () => undoSave(recipe.id);
+      confirmation.appendChild(undoButton);
+      console.log(`Applied confirmation styles for recipe ${recipe.id}: text-green-600 bg-green-50 p-2 rounded-md`); // Debug
+      setTimeout(() => {
+        confirmation.classList.add('hidden');
+        confirmation.textContent = '';
+        confirmation.classList.remove('text-green-600', 'bg-green-50', 'text-blue-600', 'bg-blue-50', 'p-2', 'rounded-md');
+      }, 2000);
+      return true;
+    }
+
+    // Undo save action
+    function undoSave(recipeId) {
+      console.log('undoSave called with ID:', recipeId); // Debug
+      const card = document.querySelector(`[data-recipe-id="${recipeId}"]`);
+      const recipe = generatedRecipes.find(r => r.id === recipeId);
+      if (!recipe || !card) {
+        console.error('Recipe or card not found for ID:', recipeId); // Debug
+        return;
+      }
+      const recipeKey = `${recipe.name}-${recipe.cuisine}`.toLowerCase();
+      let savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+      savedRecipes = savedRecipes.filter(r => `${r.name}-${r.cuisine}`.toLowerCase() !== recipeKey);
+      localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
+      console.log('Undid save for recipe:', recipe.name); // Debug
+      updateSavedRecipes();
+      const confirmation = card.querySelector('.save-confirmation');
+      confirmation.textContent = 'Undo successful!';
+      confirmation.classList.remove('text-green-600', 'bg-green-50', 'text-yellow-600', 'bg-yellow-50');
+      confirmation.classList.add('text-blue-600', 'bg-blue-50', 'p-2', 'rounded-md');
+      console.log(`Applied confirmation styles for recipe ${recipeId} (undo): text-blue-600 bg-blue-50 p-2 rounded-md`); // Debug
+      setTimeout(() => {
+        confirmation.classList.add('hidden');
+        confirmation.classList.remove('text-blue-600', 'bg-blue-50');
+        confirmation.textContent = '';
+      }, 2000);
+    }
+
+    // Save recipe by ID
+    function saveRecipeById(recipeId) {
+      console.log('saveRecipeById called with ID:', recipeId); // Debug
+      const card = document.querySelector(`[data-recipe-id="${recipeId}"]`);
+      const recipe = generatedRecipes.find(r => r.id === recipeId);
+      if (recipe && card) {
+        saveRecipe(recipe, card);
+      } else {
+        console.error('Recipe or card not found for ID:', recipeId); // Debug
+      }
+    }
+
+    // Remove recipe from localStorage
+    function removeRecipe(recipeKey) {
+      console.log('Attempting to remove recipe:', recipeKey); // Debug
+      let savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+      savedRecipes = savedRecipes.filter(r => `${r.name}-${r.cuisine}`.toLowerCase() !== recipeKey);
+      localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
+      console.log('Removed recipe:', recipeKey); // Debug
+      updateSavedRecipes();
+    }
+
+    // Download saved recipes as PDF
+    function downloadSavedRecipes() {
+      console.log('downloadSavedRecipes called'); // Debug
+      const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+      if (savedRecipes.length === 0) {
+        console.log('No recipes to download'); // Debug
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      let y = 10; // Starting y-position (mm)
+      const margin = 10;
+      const lineHeight = 5;
+      const pageHeight = 297; // A4 height in mm
+      const maxWidth = 190; // A4 width (210mm) - 2 * margin
+
+      savedRecipes.forEach((recipe, index) => {
+        if (y > pageHeight - 20) {
+          doc.addPage();
+          y = 10;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(`Recipe: ${recipe.name}`, margin, y);
+        y += lineHeight;
+
+        doc.setFontSize(10);
+        doc.text(`Cuisine: ${recipe.cuisine}`, margin, y);
+        y += lineHeight;
+
+        // Add rating to PDF
+        doc.text(`Rating: ${recipe.rating || 0}/5`, margin, y);
+        y += lineHeight;
+
+        doc.text('Ingredients:', margin, y);
+        y += lineHeight;
+        doc.setFont('helvetica', 'normal');
+        recipe.ingredients.forEach(ing => {
+          doc.text(`• ${ing}`, margin + 5, y);
+          y += lineHeight;
+        });
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('Instructions:', margin, y);
+        y += lineHeight;
+        doc.setFont('helvetica', 'normal');
+        const instructions = recipe.instructions.split(/\. (?=\d+\. )|\. (?=[A-Z])|\.\s*$/)
+          .filter(step => step.trim())
+          .map(step => step.trim() + (step.trim().endsWith('.') ? '' : '.'));
+        instructions.forEach(step => {
+          const lines = doc.splitTextToSize(`• ${step}`, maxWidth - 5);
+          lines.forEach(line => {
+            if (y > pageHeight - 10) {
+              doc.addPage();
+              y = 10;
+            }
+            doc.text(line, margin + 5, y);
+            y += lineHeight;
+          });
+        });
+
+        if (index < savedRecipes.length - 1) {
+          y += lineHeight;
+          if (y > pageHeight - 10) {
+            doc.addPage();
+            y = 10;
+          }
+          doc.setLineWidth(0.5);
+          doc.line(margin, y, 200, y);
+          y += lineHeight;
+        }
+      });
+
+      doc.save('recipes.pdf');
+      console.log('Downloaded saved recipes as PDF:', savedRecipes.length); // Debug
+    }
+
+    // Update saved recipes section
+    function updateSavedRecipes() {
+      const savedRecipesDiv = document.getElementById('savedRecipes');
+      const savedRecipesList = document.getElementById('savedRecipesList');
+      const downloadButton = document.getElementById('downloadRecipes');
+      const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+
+      if (savedRecipes.length > 0) {
+        savedRecipesDiv.classList.remove('hidden');
+        downloadButton.disabled = false;
+        downloadButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        savedRecipesList.innerHTML = savedRecipes.map(recipe => `
+          <div class="mt-4 p-4 bg-gray-100 rounded-md border border-gray-200 animate-fade-in-up">
+            <h3 class="text-lg font-bold text-gray-800">${recipe.name}</h3>
+            <p class="text-gray-600 mt-2"><strong>Cuisine:</strong> ${recipe.cuisine} <span class="ml-2 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">${cuisineEmojis[recipe.cuisine] || '🍴'}</span></p>
+            <p class="text-gray-600 mt-2"><strong>Rating:</strong> ${recipe.rating || 0}/5 <span class="text-yellow-500">${'★'.repeat(recipe.rating || 0)}${'☆'.repeat(5 - (recipe.rating || 0))}</span></p>
+            <p class="text-gray-600 mt-2"><strong>Ingredients:</strong> ${recipe.ingredients.join(', ')}</p>
+            <p class="text-gray-600 mt-2"><strong>Instructions:</strong> ${recipe.instructions}</p>
+            <button onclick="removeRecipe('${recipe.name}-${recipe.cuisine}'.toLowerCase())" class="mt-2 bg-red-100 text-red-600 px-3 py-1 rounded-md hover:bg-red-200 transition">Remove</button>
+          </div>
+        `).join('');
+      } else {
+        savedRecipesDiv.classList.add('hidden');
+        downloadButton.disabled = true;
+        downloadButton.classList.add('opacity-50', 'cursor-not-allowed');
+        savedRecipesList.innerHTML = '';
+      }
+      console.log('Updated saved recipes:', savedRecipes.length); // Debug
+    }
+
+    // Update recipe counter
+    function updateRecipeCounter() {
+      const resultsDiv = document.getElementById('results');
+      let counter = document.getElementById('recipeCounter');
+      if (recipeCount > 0) {
+        if (!counter) {
+          resultsDiv.insertAdjacentHTML('beforeend', `<p id="recipeCounter" class="text-gray-600 text-center font-semibold mt-4 animate-fade-in-up"></p>`);
+          counter = document.getElementById('recipeCounter');
+        }
+        counter.textContent = `${recipeCount} of ${maxRecipes} recipes generated`;
+        console.log('Updated recipe counter:', counter.textContent); // Debug
+      } else if (counter) {
+        counter.remove();
+      }
+    }
+
+    // Generate a recipe
+    async function generateRecipe() {
+      const resultsDiv = document.getElementById('results');
+      const actionButtonsDiv = document.getElementById('actionButtons');
+
+      // Show loading state
+      resultsDiv.insertAdjacentHTML('beforeend', `
+        <div class="flex justify-center items-center mt-4">
+          <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+          <p class="text-gray-600 ml-2">Generating recipe...</p>
+        </div>
+      `);
+
+      try {
+        // Call the Netlify Function proxy
+        console.log('Sending request to Netlify Function proxy...'); // Debug
+        const response = await fetch('/.netlify/functions/proxy', {
+          method: 'POST',
+          body: JSON.stringify({
+            ingredients: userIngredients,
+            usedCuisines: usedCuisines
+          })
+        });
+
+        if (!response.ok) {
+          let message = 'Uh-oh, something broke! Please try again or check your connection.';
+          if (response.status === 429) {
+            message = 'Oops, too many requests! Please wait a moment and try again.';
+          }
+          throw new Error(`HTTP error! Status: ${response.status} - ${message}`);
+        }
+
+        const data = await response.json();
+        console.log('Proxy response received:', data); // Debug
+        console.log('Raw content:', data.choices[0].message.content); // Debug
+
+        // Clean and parse response
+        const cleanedContent = cleanJsonResponse(data.choices[0].message.content);
+        let recipe;
+        try {
+          recipe = JSON.parse(cleanedContent);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          throw new Error('Something went wrong with the recipe data. Please try again!');
+        }
+
+        // Increment recipe count
+        recipeCount++;
+
+        // Store recipe with ID
+        const recipeId = `recipe-${recipeCount}`;
+        generatedRecipes.push({ id: recipeId, ...recipe });
+        console.log('Stored recipe with ID:', recipeId); // Debug
+
+        // Track cuisine
+        if (recipe.cuisine) {
+          usedCuisines.push(recipe.cuisine);
+          console.log('Added cuisine to used list:', recipe.cuisine); // Debug
+        }
+
+        // Prepare recipe card HTML with Save Recipe button, rating, undo rating, and cuisine badge
+        const recipeHtml = recipe.name && recipe.instructions !== 'No recipe possible with these ingredients.'
+          ? `
+            <div data-recipe-id="${recipeId}" class="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200 animate-fade-in-up relative">
+              <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                Recipe ${recipeCount}: ${recipe.name}
+                <span class="ml-2 text-lg">👨‍🍳</span>
+              </h2>
+              <p class="text-gray-600 mt-2"><strong>Cuisine:</strong> ${recipe.cuisine} <span class="ml-2 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">${cuisineEmojis[recipe.cuisine] || '🍴'}</span></p>
+              <p class="text-gray-600 mt-2"><strong>Ingredients:</strong> ${recipe.ingredients.join(', ')}</p>
+              <p class="text-gray-600 mt-2"><strong>Instructions:</strong> ${recipe.instructions}</p>
+              <button onclick="saveRecipeById('${recipeId}')" class="mt-2 bg-green-100 text-green-600 px-3 py-1 rounded-md hover:bg-green-200 transition">Save Recipe</button>
+              <p class="save-confirmation hidden absolute top-2 right-2"></p>
+              <div class="mt-2 flex items-center space-x-2">
+                <div>
+                  <p class="text-gray-600 text-sm">Rate this recipe:</p>
+                  <div class="stars flex space-x-1">
+                    ${[1, 2, 3, 4, 5].map(i => `
+                      <span data-star="${i}" onclick="rateRecipe('${recipeId}', ${i})" class="text-gray-300 text-xl cursor-pointer hover:text-yellow-400">${getRecipeRating(recipeId) >= i ? '★' : '☆'}</span>
+                    `).join('')}
+                  </div>
+                </div>
+                <button onclick="undoRating('${recipeId}')" class="undo-rating hidden text-sm text-gray-500 hover:text-gray-700">Undo Rating</button>
+              </div>
+            </div>
+          `
+          : '<p class="text-gray-600 mt-4 animate-fade-in-up">No recipe possible with these ingredients. Try different combinations!</p>';
+
+        // Replace loading state with recipe card
+        resultsDiv.lastElementChild.remove(); // Remove loading spinner
+        resultsDiv.insertAdjacentHTML('beforeend', recipeHtml);
+        console.log('Animation triggered for recipe card:', recipe.name || 'No recipe'); // Debug
+
+        // Update recipe counter
+        updateRecipeCounter();
+
+        // Show action buttons if under max recipes
+        if (recipeCount < maxRecipes) {
+          actionButtonsDiv.classList.remove('hidden');
+        } else {
+          resultsDiv.insertAdjacentHTML('beforeend', '<p class="text-gray-600 mt-4 animate-fade-in-up">Max recipes reached! Try new ingredients.</p>');
+          actionButtonsDiv.classList.add('hidden');
+        }
+      } catch (error) {
+        console.error('Error generating recipe:', error); // Debug
+        resultsDiv.lastElementChild.remove(); // Remove loading spinner
+        resultsDiv.insertAdjacentHTML('beforeend', `
+          <p class="text-red-500 bg-red-50 p-3 rounded-md mt-4 animate-fade-in-up">${error.message}</p>
+        `);
+        actionButtonsDiv.classList.add('hidden');
+      }
+    }
+
+    async function findRecipes() {
+      console.log('Find Recipes clicked!'); // Debug
+      const input = document.getElementById('ingredientsInput').value.trim();
+      console.log('Ingredients:', input); // Debug
+      const resultsDiv = document.getElementById('results');
+      const actionButtonsDiv = document.getElementById('actionButtons');
+
+      // Validate inputs
+      const validation = validateIngredients(input);
+      if (!validation.valid) {
+        resultsDiv.innerHTML = `<p class="text-red-500 bg-red-50 p-3 rounded-md">${validation.message}</p>`;
+        console.log('Validation failed:', validation.message); // Debug
+        document.getElementById('ingredientsInput').value = ''; // Clear invalid input
+        return;
+      }
+
+      // Reset state
+      resultsDiv.innerHTML = '';
+      actionButtonsDiv.classList.add('hidden');
+      recipeCount = 0;
+      usedCuisines = [];
+      generatedRecipes = [];
+      recipeRatings = {};
+      console.log('Reset usedCuisines, generatedRecipes, and recipeRatings'); // Debug
+
+      // Store inputs
+      userIngredients = sanitizeInput(input).toLowerCase().split(',').map(item => item.trim());
+      console.log('Processed ingredients:', userIngredients); // Debug
+
+      // Generate first recipe
+      await generateRecipe();
+    }
+
+    async function generateAnother() {
+      console.log('Generate Another clicked!'); // Debug
+      if (recipeCount < maxRecipes) {
+        await generateRecipe();
+      }
+    }
+
+    function clearAll() {
+      console.log('Clear All clicked!'); // Debug
+      const resultsDiv = document.getElementById('results');
+      const actionButtonsDiv = document.getElementById('actionButtons');
+      const ingredientsInput = document.getElementById('ingredientsInput');
+
+      // Reset state
+      userIngredients = [];
+      recipeCount = 0;
+      usedCuisines = [];
+      generatedRecipes = [];
+      recipeRatings = {};
+      localStorage.removeItem('savedRecipes');
+      resultsDiv.innerHTML = '';
+      actionButtonsDiv.classList.add('hidden');
+      ingredientsInput.value = '';
+      updateSavedRecipes();
+      console.log('State reset'); // Debug
+    }
+
+    // Initialize saved recipes on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateSavedRecipes();
+    });
+  </script>
+</body>
+</html>
