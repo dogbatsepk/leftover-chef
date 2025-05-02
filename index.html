@@ -41,6 +41,12 @@
     <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">Leftover Ingredients Chef</h1>
     <p class="text-center text-gray-600 mb-4">Enter your leftover ingredients (e.g., chicken, spinach, soy sauce), separated by commas, and get recipe ideas!</p>
     
+    <!-- Username Input -->
+    <div class="mb-4">
+      <label for="usernameInput" class="block text-sm font-medium text-gray-700 mb-1">Your Username:</label>
+      <input id="usernameInput" type="text" placeholder="Enter your username" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    
     <!-- Leftover Challenge Section -->
     <div id="leftoverChallenge" class="mb-4 p-4 bg-yellow-50 rounded-md text-center">
       <h2 class="text-lg font-bold text-yellow-800 flex items-center justify-center">
@@ -58,6 +64,11 @@
         <span id="badge-first-recipe" class="hidden bg-green-100 text-green-600 px-2 py-1 rounded-full text-sm">🏅 First Recipe</span>
         <span id="badge-recipe-master" class="hidden bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-sm">⭐ Recipe Master</span>
         <span id="badge-recipe-saver" class="hidden bg-purple-100 text-purple-600 px-2 py-1 rounded-full text-sm">💾 Recipe Saver</span>
+      </div>
+      <!-- Leaderboard -->
+      <div id="leaderboard" class="mt-4">
+        <h3 class="text-md font-bold text-yellow-800">🏆 Leaderboard</h3>
+        <ul id="leaderboardList" class="mt-2 text-yellow-700"></ul>
       </div>
     </div>
     
@@ -109,7 +120,11 @@
     let usedCuisines = [];
     let generatedRecipes = [];
     let totalPoints = parseInt(localStorage.getItem('totalPoints') || '0'); // Initialize points from localStorage
+    let username = localStorage.getItem('username') || ''; // Initialize username from localStorage
     const maxRecipes = 5;
+
+    // Load or initialize leaderboard from localStorage
+    let leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
 
     // Cuisine to emoji mapping
     const cuisineEmojis = {
@@ -127,7 +142,7 @@
     // Load or initialize badges from localStorage
     let badges = JSON.parse(localStorage.getItem('badges') || '[]');
 
-    // Update total points display and progress bar
+    // Update total points display, leaderboard, and progress bar
     function updatePointsDisplay() {
       const totalPointsElement = document.getElementById('totalPoints');
       const progressBar = document.getElementById('progressBar');
@@ -162,6 +177,42 @@
       const progress = ((totalPoints - previousMilestone) / progressRange) * 100;
       progressBar.style.width = `${progress}%`;
       console.log(`Progress: ${progress}% toward ${nextMilestone} (from ${previousMilestone})`); // Debug
+
+      // Update leaderboard
+      updateLeaderboard();
+    }
+
+    // Update the leaderboard
+    function updateLeaderboard() {
+      if (username && totalPoints > 0) {
+        const existingEntry = leaderboard.find(entry => entry.username === username);
+        if (existingEntry) {
+          existingEntry.points = totalPoints;
+        } else {
+          leaderboard.push({ username, points: totalPoints });
+        }
+        // Sort leaderboard by points (descending) and limit to top 5
+        leaderboard.sort((a, b) => b.points - a.points);
+        leaderboard = leaderboard.slice(0, 5);
+        localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+        console.log('Updated leaderboard:', leaderboard); // Debug
+      }
+
+      // Display leaderboard
+      const leaderboardList = document.getElementById('leaderboardList');
+      leaderboardList.innerHTML = leaderboard.length > 0
+        ? leaderboard.map((entry, index) => `
+            <li class="flex justify-between items-center py-1">
+              <span class="flex items-center">
+                <span class="mr-2 text-lg">
+                  ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                </span>
+                ${entry.username}
+              </span>
+              <span>${entry.points} pts</span>
+            </li>
+          `).join('')
+        : '<li class="text-center">No scores yet. Be the first!</li>';
     }
 
     // Award points based on number of ingredients
@@ -229,6 +280,18 @@
       const ingredients = input.split(',').map(item => item.trim()).filter(item => item);
       if (ingredients.some(item => !item)) {
         return { valid: false, message: 'Ingredients can’t be empty or just spaces. Try again (e.g., chicken, rice)!' };
+      }
+      return { valid: true, message: '' };
+    }
+
+    // Validate username (letters, numbers, spaces, underscores, hyphens only)
+    function validateUsername(input) {
+      if (!input.trim()) {
+        return { valid: false, message: 'Please enter a username!' };
+      }
+      const validPattern = /^[a-zA-Z0-9\s_-]*$/;
+      if (!validPattern.test(input)) {
+        return { valid: false, message: 'Username can only contain letters, numbers, spaces, underscores, or hyphens!' };
       }
       return { valid: true, message: '' };
     }
@@ -611,11 +674,23 @@
     async function findRecipes() {
       console.log('Find Recipes clicked!'); // Debug
       const input = document.getElementById('ingredientsInput').value.trim();
+      const usernameInput = document.getElementById('usernameInput').value.trim();
       console.log('Manual input:', input); // Debug
       const resultsDiv = document.getElementById('results');
       const actionButtonsDiv = document.getElementById('actionButtons');
       const select = document.getElementById('ingredientSelect');
       const selectedOptions = Array.from(select.selectedOptions).map(option => option.value);
+
+      // Validate username
+      const usernameValidation = validateUsername(usernameInput);
+      if (!usernameValidation.valid) {
+        resultsDiv.innerHTML = `<p class="text-red-500 bg-red-50 p-3 rounded-md">${usernameValidation.message}</p>`;
+        console.log('Username validation failed:', usernameValidation.message); // Debug
+        return;
+      }
+      username = sanitizeInput(usernameInput);
+      localStorage.setItem('username', username);
+      console.log('Username set:', username); // Debug
 
       // Validate inputs
       const validation = validateIngredients(input);
@@ -665,6 +740,7 @@
       const badgeFirstRecipe = document.getElementById('badge-first-recipe');
       const badgeRecipeMaster = document.getElementById('badge-recipe-master');
       const badgeRecipeSaver = document.getElementById('badge-recipe-saver');
+      const usernameInput = document.getElementById('usernameInput');
 
       // Reset state
       userIngredients = [];
@@ -674,12 +750,17 @@
       recipeRatings = {};
       totalPoints = 0; // Reset points
       badges = [];
+      leaderboard = leaderboard.filter(entry => entry.username !== username); // Remove current user from leaderboard
+      username = '';
       localStorage.removeItem('savedRecipes');
       localStorage.removeItem('totalPoints'); // Clear points from storage
       localStorage.removeItem('badges'); // Clear badges from storage
+      localStorage.removeItem('username'); // Clear username from storage
+      localStorage.setItem('leaderboard', JSON.stringify(leaderboard)); // Update leaderboard in storage
       resultsDiv.innerHTML = '';
       actionButtonsDiv.classList.add('hidden');
       ingredientsInput.value = '';
+      usernameInput.value = '';
       ingredientSelect.selectedIndex = 0; // Reset dropdown to default
       badgeFirstRecipe.classList.add('hidden');
       badgeRecipeMaster.classList.add('hidden');
@@ -689,16 +770,19 @@
       console.log('State reset'); // Debug
     }
 
-    // Initialize saved recipes, points, and badges on page load
+    // Initialize saved recipes, points, badges, and leaderboard on page load
     document.addEventListener('DOMContentLoaded', () => {
       updateSavedRecipes();
       updatePointsDisplay();
       const badgeFirstRecipe = document.getElementById('badge-first-recipe');
       const badgeRecipeMaster = document.getElementById('badge-recipe-master');
       const badgeRecipeSaver = document.getElementById('badge-recipe-saver');
+      const usernameInput = document.getElementById('usernameInput');
       if (badges.includes('first-recipe')) badgeFirstRecipe.classList.remove('hidden');
       if (badges.includes('recipe-master')) badgeRecipeMaster.classList.remove('hidden');
       if (badges.includes('recipe-saver')) badgeRecipeSaver.classList.remove('hidden');
+      usernameInput.value = username; // Restore username
+      updateLeaderboard(); // Initialize leaderboard display
     });
   </script>
 </body>
