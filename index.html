@@ -178,12 +178,13 @@
       progressBar.style.width = `${progress}%`;
       console.log(`Progress: ${progress}% toward ${nextMilestone} (from ${previousMilestone})`); // Debug
 
-      // Update leaderboard
+      // Update leaderboard with all users
       updateLeaderboard();
     }
 
-    // Update the leaderboard
+    // Update the leaderboard with all users' scores
     function updateLeaderboard() {
+      // Ensure current user's score is included if they have a username and points
       if (username && totalPoints > 0) {
         const existingEntry = leaderboard.find(entry => entry.username === username);
         if (existingEntry) {
@@ -191,9 +192,10 @@
         } else {
           leaderboard.push({ username, points: totalPoints });
         }
-        // Sort leaderboard by points (descending) and limit to top 5
+        // Sort by points (descending) and remove duplicates by keeping the highest score
+        leaderboard = Array.from(new Map(leaderboard.map(entry => [entry.username, entry])).values());
         leaderboard.sort((a, b) => b.points - a.points);
-        leaderboard = leaderboard.slice(0, 5);
+        leaderboard = leaderboard.slice(0, 5); // Limit to top 5
         localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
         console.log('Updated leaderboard:', leaderboard); // Debug
       }
@@ -202,7 +204,7 @@
       const leaderboardList = document.getElementById('leaderboardList');
       leaderboardList.innerHTML = leaderboard.length > 0
         ? leaderboard.map((entry, index) => `
-            <li class="flex justify-between items-center py-1">
+            <li class="flex justify-between items-center py-1 ${entry.username === username ? 'bg-yellow-200' : ''}">
               <span class="flex items-center">
                 <span class="mr-2 text-lg">
                   ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
