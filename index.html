@@ -184,20 +184,20 @@
 
     // Update the leaderboard with all users' scores
     function updateLeaderboard() {
-      // Reload leaderboard from localStorage to ensure we have the latest data
-      leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+      // Load existing leaderboard from localStorage
+      const storedLeaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
 
-      // Update or add current user's score
+      // Merge current user's score with stored leaderboard
       if (username && totalPoints > 0) {
-        const existingEntryIndex = leaderboard.findIndex(entry => entry.username === username);
+        const existingEntryIndex = storedLeaderboard.findIndex(entry => entry.username === username);
         if (existingEntryIndex !== -1) {
-          leaderboard[existingEntryIndex].points = totalPoints; // Update existing score
+          storedLeaderboard[existingEntryIndex].points = Math.max(storedLeaderboard[existingEntryIndex].points, totalPoints); // Keep highest score
         } else {
-          leaderboard.push({ username, points: totalPoints }); // Add new entry
+          storedLeaderboard.push({ username, points: totalPoints });
         }
         // Sort by points (descending) and limit to top 5
-        leaderboard.sort((a, b) => b.points - a.points);
-        leaderboard = leaderboard.slice(0, 5);
+        storedLeaderboard.sort((a, b) => b.points - a.points);
+        leaderboard = storedLeaderboard.slice(0, 5);
         localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
         console.log('Updated leaderboard:', leaderboard); // Debug
       }
