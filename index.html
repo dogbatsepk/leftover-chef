@@ -6,13 +6,23 @@
   <title>Leftover Ingredients Chef</title>
   <link href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
+    /* Smooth fade-in for the entire page */
+    body {
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    /* Fade-in-up animation for elements */
     @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(10px); }
+      from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
     .animate-fade-in-up {
       animation: fadeInUp 0.7s ease-out forwards !important;
     }
+    /* Zoom-in animation for hero image */
     @keyframes zoomIn {
       from { transform: scale(1); }
       to { transform: scale(1.05); }
@@ -23,53 +33,90 @@
     .hero-overlay-text {
       text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
     }
+    /* Hover effect for buttons */
+    .btn-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+    }
+    /* Custom navbar styling */
+    .navbar {
+      background: linear-gradient(90deg, #ffedd5, #fed7aa);
+    }
+    /* Custom container styling */
+    .main-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    /* Footer styling */
+    .footer {
+      background: linear-gradient(90deg, #fed7aa, #ffedd5);
+    }
   </style>
 </head>
-<body class="bg-gradient-to-br from-yellow-100 to-orange-200 min-h-screen flex items-center justify-center p-4 relative">
-  <div class="absolute inset-0 bg-gray-900 bg-opacity-20 z-[-1]"></div>
-  <div class="bg-white bg-opacity-95 rounded-lg shadow-lg p-6 w-full max-w-md relative z-10">
-    <!-- Hero Image with Overlay -->
-    <div class="relative mb-4">
-      <img src="hero.jpg" alt="From Fridge to Feast" class="w-full h-48 object-cover rounded-t-lg shadow-md hero-image">
-      <div class="absolute inset-0 flex items-center justify-center">
-        <div class="px-4 py-2 rounded text-white text-2xl font-bold hero-overlay-text">
-          From Fridge to Feast!
-        </div>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+  <!-- Navbar -->
+  <nav class="navbar p-4 shadow-lg">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-gray-800">Leftover Ingredients Chef</h1>
+      <div class="space-x-4">
+        <a href="#" class="text-gray-600 hover:text-gray-800 transition">Home</a>
+        <a href="#" class="text-gray-600 hover:text-gray-800 transition">About</a>
       </div>
     </div>
-    
-    <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">Leftover Ingredients Chef</h1>
-    <p class="text-center text-gray-600 mb-4">Enter your leftover ingredients (e.g., chicken, spinach, soy sauce), separated by commas, and get recipe ideas!</p>
-    
-    <div class="mb-4">
-      <input id="ingredientsInput" type="text" placeholder="e.g., chicken, spinach, soy sauce" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+  </nav>
+
+  <!-- Main Content -->
+  <main class="flex-grow flex items-center justify-center p-6">
+    <div class="main-container bg-white rounded-xl shadow-2xl p-8 w-full">
+      <!-- Hero Image with Overlay -->
+      <div class="relative mb-6">
+        <img src="https://images.unsplash.com/photo-1600585154347-90363e9a42b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" alt="From Fridge to Feast" class="w-full h-56 object-cover rounded-lg shadow-md hero-image">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="px-6 py-3 bg-black bg-opacity-50 rounded-lg text-white text-3xl font-bold hero-overlay-text">
+            From Fridge to Feast!
+          </div>
+        </div>
+      </div>
+      
+      <h1 class="text-3xl font-bold text-center text-gray-800 mb-4 animate-fade-in-up">Leftover Ingredients Chef</h1>
+      <p class="text-center text-gray-600 mb-6 animate-fade-in-up">Turn your leftovers into delicious meals! Enter your ingredients (e.g., chicken, spinach, soy sauce), separated by commas, and get recipe ideas.</p>
+      
+      <div class="mb-6 animate-fade-in-up">
+        <input id="ingredientsInput" type="text" placeholder="e.g., chicken, spinach, soy sauce" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      
+      <!-- Dietary Preference Dropdown -->
+      <div class="mb-6 animate-fade-in-up">
+        <label for="dietaryPreference" class="block text-sm font-medium text-gray-700 mb-2">Dietary Preference:</label>
+        <select id="dietaryPreference" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="none">No Preference</option>
+          <option value="vegetarian">Vegetarian</option>
+          <option value="vegan">Vegan</option>
+        </select>
+      </div>
+      
+      <button onclick="findRecipes()" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 btn-hover transition">Find Recipes</button>
+      
+      <div id="results" class="mt-8"></div>
+      <div id="actionButtons" class="mt-6 hidden flex justify-center">
+        <button onclick="generateAnother()" class="w-1/2 bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 btn-hover transition">Generate Another</button>
+      </div>
+      <div id="clearButton" class="mt-6 hidden flex justify-center">
+        <button onclick="clearAll()" class="w-1/2 bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 btn-hover transition">Clear All</button>
+      </div>
+      <div id="savedRecipes" class="mt-8 hidden">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 animate-fade-in-up">Saved Recipes</h2>
+        <button id="downloadRecipes" onclick="downloadSavedRecipes()" class="mb-4 bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200 btn-hover transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>Download Recipes (PDF)</button>
+        <div id="savedRecipesList"></div>
+      </div>
     </div>
-    
-    <!-- Dietary Preference Dropdown -->
-    <div class="mb-4">
-      <label for="dietaryPreference" class="block text-sm font-medium text-gray-700 mb-1">Dietary Preference:</label>
-      <select id="dietaryPreference" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option value="none">No Preference</option>
-        <option value="vegetarian">Vegetarian</option>
-        <option value="vegan">Vegan</option>
-      </select>
-    </div>
-    
-    <button onclick="findRecipes()" class="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition">Find Recipes</button>
-    
-    <div id="results" class="mt-6"></div>
-    <div id="actionButtons" class="mt-4 hidden flex justify-center">
-      <button onclick="generateAnother()" class="w-1/2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600 transition">Generate Another</button>
-    </div>
-    <div id="clearButton" class="mt-4 hidden flex justify-center">
-      <button onclick="clearAll()" class="w-1/2 bg-red-500 text-white p-2 rounded-md hover:bg-red-600 transition">Clear All</button>
-    </div>
-    <div id="savedRecipes" class="mt-6 hidden">
-      <h2 class="text-xl font-bold text-gray-800 mb-4">Saved Recipes</h2>
-      <button id="downloadRecipes" onclick="downloadSavedRecipes()" class="mb-4 bg-blue-100 text-blue-600 px-3 py-1 rounded-md hover:bg-blue-200 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>Download Recipes (PDF)</button>
-      <div id="savedRecipesList"></div>
-    </div>
-  </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer p-4 text-center text-gray-600">
+    <p>&copy; 2025 Leftover Ingredients Chef. All rights reserved.</p>
+  </footer>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
@@ -78,7 +125,7 @@
 
     // Store state
     let userIngredients = [];
-    let dietaryPreference = 'none'; // Default to no preference
+    let dietaryPreference = 'none';
     let recipeCount = 0;
     let usedCuisines = [];
     let generatedRecipes = [];
@@ -121,7 +168,6 @@
 
     // Validate ingredients (letters, spaces, commas, and dietary preference)
     function validateIngredients(input, dietaryPreference) {
-      // Basic format validation
       if (!input.trim()) {
         return { valid: false, message: 'Oops, please enter at least one ingredient (e.g., chicken, rice)!' };
       }
@@ -134,7 +180,6 @@
         return { valid: false, message: 'Ingredients can’t be empty or just spaces. Try again (e.g., chicken, rice)!' };
       }
 
-      // Dietary preference validation
       const lowerCaseIngredients = ingredients.map(item => item.toLowerCase());
       if (dietaryPreference === 'vegan') {
         const invalidIngredients = lowerCaseIngredients.filter(ing => 
@@ -384,14 +429,14 @@
         downloadButton.disabled = false;
         downloadButton.classList.remove('opacity-50', 'cursor-not-allowed');
         savedRecipesList.innerHTML = savedRecipes.map(recipe => `
-          <div class="mt-4 p-4 bg-gray-100 rounded-md border border-gray-200 animate-fade-in-up">
+          <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 animate-fade-in-up">
             <h3 class="text-lg font-bold text-gray-800">${recipe.name}</h3>
             <p class="text-gray-600 mt-2"><strong>Cuisine:</strong> ${recipe.cuisine} <span class="ml-2 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">${cuisineEmojis[recipe.cuisine] || '🍴'}</span></p>
             <p class="text-gray-600 mt-2"><strong>Dietary Preference:</strong> ${recipe.dietaryPreference.charAt(0).toUpperCase() + recipe.dietaryPreference.slice(1)} <span class="ml-2 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">${dietEmojis[recipe.dietaryPreference]}</span></p>
             <p class="text-gray-600 mt-2"><strong>Rating:</strong> ${recipe.rating || 0}/5 <span class="text-yellow-500">${'★'.repeat(recipe.rating || 0)}${'☆'.repeat(5 - (recipe.rating || 0))}</span></p>
             <p class="text-gray-600 mt-2"><strong>Ingredients:</strong> ${recipe.ingredients.join(', ')}</p>
             <p class="text-gray-600 mt-2"><strong>Instructions:</strong> ${recipe.instructions}</p>
-            <button onclick="removeRecipe('${recipe.name}-${recipe.cuisine}'.toLowerCase())" class="mt-2 bg-red-100 text-red-600 px-3 py-1 rounded-md hover:bg-red-200 transition">Remove</button>
+            <button onclick="removeRecipe('${recipe.name}-${recipe.cuisine}'.toLowerCase())" class="mt-2 bg-red-100 text-red-600 px-3 py-1 rounded-lg hover:bg-red-200 btn-hover transition">Remove</button>
           </div>
         `).join('');
       } else {
@@ -488,7 +533,7 @@
 
         const recipeHtml = recipe.name && recipe.instructions !== 'No recipe possible with these ingredients.'
           ? `
-            <div data-recipe-id="${recipeId}" class="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200 animate-fade-in-up relative">
+            <div data-recipe-id="${recipeId}" class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 animate-fade-in-up relative">
               <h2 class="text-xl font-bold text-gray-800 flex items-center">
                 Recipe ${recipeCount}: ${recipe.name}
                 <span class="ml-2 text-lg">👨‍🍳</span>
@@ -497,7 +542,7 @@
               <p class="text-gray-600 mt-2"><strong>Dietary Preference:</strong> ${dietaryPreference.charAt(0).toUpperCase() + dietaryPreference.slice(1)} <span class="ml-2 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">${dietEmojis[dietaryPreference]}</span></p>
               <p class="text-gray-600 mt-2"><strong>Ingredients:</strong> ${recipe.ingredients.join(', ')}</p>
               <p class="text-gray-600 mt-2"><strong>Instructions:</strong> ${recipe.instructions}</p>
-              <button onclick="saveRecipeById('${recipeId}')" class="mt-2 bg-green-100 text-green-600 px-3 py-1 rounded-md hover:bg-green-200 transition">Save Recipe</button>
+              <button onclick="saveRecipeById('${recipeId}')" class="mt-2 bg-green-100 text-green-600 px-3 py-1 rounded-lg hover:bg-green-200 btn-hover transition">Save Recipe</button>
               <p class="save-confirmation hidden absolute top-2 right-2"></p>
               <div class="mt-2 flex items-center space-x-2">
                 <div>
@@ -523,7 +568,7 @@
         console.error('Error generating recipe:', error);
         resultsDiv.lastElementChild.remove();
         resultsDiv.insertAdjacentHTML('beforeend', `
-          <p class="text-red-500 bg-red-50 p-3 rounded-md mt-4 animate-fade-in-up">${error.message}</p>
+          <p class="text-red-500 bg-red-50 p-3 rounded-lg mt-4 animate-fade-in-up">${error.message}</p>
         `);
         actionButtonsDiv.classList.add('hidden');
       }
@@ -541,7 +586,7 @@
 
       const validation = validateIngredients(input, dietaryPreference);
       if (!validation.valid) {
-        resultsDiv.innerHTML = `<p class="text-red-500 bg-red-50 p-3 rounded-md">${validation.message}</p>`;
+        resultsDiv.innerHTML = `<p class="text-red-500 bg-red-50 p-3 rounded-lg">${validation.message}</p>`;
         console.log('Validation failed:', validation.message);
         document.getElementById('ingredientsInput').value = '';
         return;
