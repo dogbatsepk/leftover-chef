@@ -47,7 +47,8 @@
       <input id="usernameInput" type="text" placeholder="Enter your username" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
     </div>
     
-    <!-- Leftover Challenge Section -->
+    <!-- Leftover Challenge Section (Commented Out) -->
+    <!--
     <div id="leftoverChallenge" class="mb-4 p-4 bg-yellow-50 rounded-md text-center">
       <h2 class="text-lg font-bold text-yellow-800 flex items-center justify-center">
         🍳 Leftover Challenge 🍳
@@ -71,6 +72,7 @@
         <ul id="leaderboardList" class="mt-2 text-yellow-700"></ul>
       </div>
     </div>
+    -->
     
     <!-- Suggested Ingredients Dropdown -->
     <div class="mb-4">
@@ -119,12 +121,15 @@
     let recipeCount = 0;
     let usedCuisines = [];
     let generatedRecipes = [];
-    let totalPoints = parseInt(localStorage.getItem('totalPoints') || '0'); // Initialize points from localStorage
     let username = localStorage.getItem('username') || ''; // Initialize username from localStorage
     const maxRecipes = 5;
 
-    // Load or initialize leaderboard from localStorage
+    // Comment out gamification-related variables
+    /*
+    let totalPoints = parseInt(localStorage.getItem('totalPoints') || '0'); // Initialize points from localStorage
     let leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+    let badges = JSON.parse(localStorage.getItem('badges') || '[]');
+    */
 
     // Cuisine to emoji mapping
     const cuisineEmojis = {
@@ -139,9 +144,8 @@
     // Store ratings for generated recipes (not saved yet)
     let recipeRatings = {};
 
-    // Load or initialize badges from localStorage
-    let badges = JSON.parse(localStorage.getItem('badges') || '[]');
-
+    // Comment out gamification-related functions
+    /*
     // Update total points display, leaderboard, and progress bar
     function updatePointsDisplay() {
       const totalPointsElement = document.getElementById('totalPoints');
@@ -185,7 +189,8 @@
     // Update the leaderboard with all users' scores
     function updateLeaderboard() {
       // Load existing leaderboard from localStorage
-      const storedLeaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+      let storedLeaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+      console.log('Loaded leaderboard from localStorage:', storedLeaderboard); // Debug
 
       // Merge current user's score with stored leaderboard
       if (username && totalPoints > 0) {
@@ -199,7 +204,7 @@
         storedLeaderboard.sort((a, b) => b.points - a.points);
         leaderboard = storedLeaderboard.slice(0, 5);
         localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
-        console.log('Updated leaderboard:', leaderboard); // Debug
+        console.log('Saved leaderboard to localStorage:', leaderboard); // Debug
       }
 
       // Display leaderboard
@@ -264,6 +269,7 @@
         console.log('Awarded recipe-saver badge'); // Debug
       }
     }
+    */
 
     // Simple input sanitization to prevent XSS
     function sanitizeInput(input) {
@@ -366,7 +372,7 @@
       }
       localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
       updateSavedRecipes();
-      awardSaveAchievement(); // Award badge when saving
+      // awardSaveAchievement(); // Commented out as it relates to badges
       const confirmation = card.querySelector('.save-confirmation');
       confirmation.textContent = 'Recipe saved! ';
       confirmation.classList.remove('hidden', 'text-yellow-600', 'bg-yellow-50', 'text-blue-600', 'bg-blue-50');
@@ -619,8 +625,8 @@
           console.log('Added cuisine to used list:', recipe.cuisine); // Debug
         }
 
-        // Award points based on number of ingredients
-        awardPoints(userIngredients.length);
+        // Comment out points awarding
+        // awardPoints(userIngredients.length);
 
         // Prepare recipe card HTML with Save Recipe button, rating, undo rating, and cuisine badge
         const recipeHtml = recipe.name && recipe.instructions !== 'No recipe possible with these ingredients.'
@@ -741,9 +747,6 @@
       const actionButtonsDiv = document.getElementById('actionButtons');
       const ingredientsInput = document.getElementById('ingredientsInput');
       const ingredientSelect = document.getElementById('ingredientSelect');
-      const badgeFirstRecipe = document.getElementById('badge-first-recipe');
-      const badgeRecipeMaster = document.getElementById('badge-recipe-master');
-      const badgeRecipeSaver = document.getElementById('badge-recipe-saver');
       const usernameInput = document.getElementById('usernameInput');
 
       // Reset state
@@ -752,41 +755,41 @@
       usedCuisines = [];
       generatedRecipes = [];
       recipeRatings = {};
-      totalPoints = 0; // Reset points
-      badges = [];
-      leaderboard = leaderboard.filter(entry => entry.username !== username); // Remove current user from leaderboard
       username = '';
       localStorage.removeItem('savedRecipes');
+      localStorage.removeItem('username'); // Clear username from storage
+      // Comment out gamification-related storage clearing
+      /*
       localStorage.removeItem('totalPoints'); // Clear points from storage
       localStorage.removeItem('badges'); // Clear badges from storage
-      localStorage.removeItem('username'); // Clear username from storage
+      leaderboard = leaderboard.filter(entry => entry.username !== username); // Remove current user from leaderboard
       localStorage.setItem('leaderboard', JSON.stringify(leaderboard)); // Update leaderboard in storage
+      */
       resultsDiv.innerHTML = '';
       actionButtonsDiv.classList.add('hidden');
       ingredientsInput.value = '';
       usernameInput.value = '';
       ingredientSelect.selectedIndex = 0; // Reset dropdown to default
-      badgeFirstRecipe.classList.add('hidden');
-      badgeRecipeMaster.classList.add('hidden');
-      badgeRecipeSaver.classList.add('hidden');
       updateSavedRecipes();
-      updatePointsDisplay();
       console.log('State reset'); // Debug
     }
 
-    // Initialize saved recipes, points, badges, and leaderboard on page load
+    // Initialize saved recipes on page load
     document.addEventListener('DOMContentLoaded', () => {
       updateSavedRecipes();
+      const usernameInput = document.getElementById('usernameInput');
+      usernameInput.value = username; // Restore username
+      // Comment out gamification-related initialization
+      /*
       updatePointsDisplay();
       const badgeFirstRecipe = document.getElementById('badge-first-recipe');
       const badgeRecipeMaster = document.getElementById('badge-recipe-master');
       const badgeRecipeSaver = document.getElementById('badge-recipe-saver');
-      const usernameInput = document.getElementById('usernameInput');
       if (badges.includes('first-recipe')) badgeFirstRecipe.classList.remove('hidden');
       if (badges.includes('recipe-master')) badgeRecipeMaster.classList.remove('hidden');
       if (badges.includes('recipe-saver')) badgeRecipeSaver.classList.remove('hidden');
-      usernameInput.value = username; // Restore username
       updateLeaderboard(); // Initialize leaderboard display
+      */
     });
   </script>
 </body>
