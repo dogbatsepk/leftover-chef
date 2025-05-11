@@ -48,8 +48,10 @@
     <button onclick="findRecipes()" class="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition">Find Recipes</button>
     
     <div id="results" class="mt-6"></div>
-    <div id="actionButtons" class="mt-4 hidden flex justify-between">
-      <button onclick="generateAnother()" class="w-1/2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600 transition mr-2">Generate Another</button>
+    <div id="actionButtons" class="mt-4 hidden flex justify-center">
+      <button onclick="generateAnother()" class="w-1/2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600 transition">Generate Another</button>
+    </div>
+    <div id="clearButton" class="mt-4 hidden flex justify-center">
       <button onclick="clearAll()" class="w-1/2 bg-red-500 text-white p-2 rounded-md hover:bg-red-600 transition">Clear All</button>
     </div>
     <div id="savedRecipes" class="mt-6 hidden">
@@ -345,9 +347,11 @@
       console.log('Updated saved recipes:', savedRecipes.length);
     }
 
-    // Update recipe counter
+    // Update recipe counter and buttons visibility
     function updateRecipeCounter() {
       const resultsDiv = document.getElementById('results');
+      const actionButtonsDiv = document.getElementById('actionButtons');
+      const clearButtonDiv = document.getElementById('clearButton');
       let counter = document.getElementById('recipeCounter');
       if (recipeCount > 0) {
         if (!counter) {
@@ -356,8 +360,19 @@
         }
         counter.textContent = `${recipeCount} of ${maxRecipes} recipes generated`;
         console.log('Updated recipe counter:', counter.textContent);
+        // Show Clear All button whenever there are recipes
+        clearButtonDiv.classList.remove('hidden');
       } else if (counter) {
         counter.remove();
+        clearButtonDiv.classList.add('hidden');
+      }
+
+      // Show "Generate Another" button only if under max recipes
+      if (recipeCount < maxRecipes) {
+        actionButtonsDiv.classList.remove('hidden');
+      } else {
+        actionButtonsDiv.classList.add('hidden');
+        resultsDiv.insertAdjacentHTML('beforeend', '<p class="text-gray-600 mt-4 animate-fade-in-up">Max recipes reached! Try new ingredients.</p>');
       }
     }
 
@@ -448,13 +463,6 @@
         console.log('Animation triggered for recipe card:', recipe.name || 'No recipe');
 
         updateRecipeCounter();
-
-        if (recipeCount < maxRecipes) {
-          actionButtonsDiv.classList.remove('hidden');
-        } else {
-          resultsDiv.insertAdjacentHTML('beforeend', '<p class="text-gray-600 mt-4 animate-fade-in-up">Max recipes reached! Try new ingredients.</p>');
-          actionButtonsDiv.classList.add('hidden');
-        }
       } catch (error) {
         console.error('Error generating recipe:', error);
         resultsDiv.lastElementChild.remove();
@@ -471,6 +479,7 @@
       console.log('Ingredients:', input);
       const resultsDiv = document.getElementById('results');
       const actionButtonsDiv = document.getElementById('actionButtons');
+      const clearButtonDiv = document.getElementById('clearButton');
 
       const validation = validateIngredients(input);
       if (!validation.valid) {
@@ -482,6 +491,7 @@
 
       resultsDiv.innerHTML = '';
       actionButtonsDiv.classList.add('hidden');
+      clearButtonDiv.classList.add('hidden');
       recipeCount = 0;
       usedCuisines = [];
       generatedRecipes = [];
@@ -505,6 +515,7 @@
       console.log('Clear All clicked!');
       const resultsDiv = document.getElementById('results');
       const actionButtonsDiv = document.getElementById('actionButtons');
+      const clearButtonDiv = document.getElementById('clearButton');
       const ingredientsInput = document.getElementById('ingredientsInput');
 
       userIngredients = [];
@@ -515,6 +526,7 @@
       localStorage.removeItem('savedRecipes');
       resultsDiv.innerHTML = '';
       actionButtonsDiv.classList.add('hidden');
+      clearButtonDiv.classList.add('hidden');
       ingredientsInput.value = '';
       updateSavedRecipes();
       console.log('State reset');
