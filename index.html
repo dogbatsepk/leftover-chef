@@ -123,53 +123,50 @@
 
     // Handle rating a recipe
     function rateRecipe(recipeId, rating) {
-      console.log(`Rating recipe ${recipeId} with ${rating} stars`); // Debug
+      console.log(`Rating recipe ${recipeId} with ${rating} stars`);
       recipeRatings[recipeId] = rating;
       const card = document.querySelector(`[data-recipe-id="${recipeId}"]`);
       const starsContainer = card.querySelector('.stars');
       const undoButton = card.querySelector('.undo-rating');
       for (let i = 1; i <= 5; i++) {
         const star = starsContainer.querySelector(`[data-star="${i}"]`);
-        star.innerHTML = i <= rating ? '★' : '☆'; // Filled star: ★, Empty star: ☆
+        star.innerHTML = i <= rating ? '★' : '☆';
         star.classList.toggle('text-yellow-500', i <= rating);
         star.classList.toggle('text-gray-300', i > rating);
       }
-      // Show the undo rating button
       undoButton.classList.remove('hidden');
     }
 
     // Handle undoing a rating
     function undoRating(recipeId) {
-      console.log(`Undoing rating for recipe ${recipeId}`); // Debug
+      console.log(`Undoing rating for recipe ${recipeId}`);
       recipeRatings[recipeId] = 0;
       const card = document.querySelector(`[data-recipe-id="${recipeId}"]`);
       const starsContainer = card.querySelector('.stars');
       const undoButton = card.querySelector('.undo-rating');
       for (let i = 1; i <= 5; i++) {
         const star = starsContainer.querySelector(`[data-star="${i}"]`);
-        star.innerHTML = '☆'; // Empty star: ☆
+        star.innerHTML = '☆';
         star.classList.remove('text-yellow-500');
         star.classList.add('text-gray-300');
       }
-      // Hide the undo rating button
       undoButton.classList.add('hidden');
     }
 
     // Save recipe to localStorage with rating
     function saveRecipe(recipe, card) {
-      console.log('Attempting to save recipe:', recipe.name); // Debug
+      console.log('Attempting to save recipe:', recipe.name);
       const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
       const recipeKey = `${recipe.name}-${recipe.cuisine}`.toLowerCase();
       const rating = getRecipeRating(recipe.id);
       const recipeWithRating = { ...recipe, rating };
       const existingIndex = savedRecipes.findIndex(r => `${r.name}-${r.cuisine}`.toLowerCase() === recipeKey);
       if (existingIndex !== -1) {
-        // Update existing recipe with new rating
         savedRecipes[existingIndex] = recipeWithRating;
-        console.log('Updated existing recipe with new rating:', recipe.name, rating); // Debug
+        console.log('Updated existing recipe with new rating:', recipe.name, rating);
       } else {
         savedRecipes.push(recipeWithRating);
-        console.log('Saved recipe with rating:', recipe.name, rating); // Debug
+        console.log('Saved recipe with rating:', recipe.name, rating);
       }
       localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
       updateSavedRecipes();
@@ -182,7 +179,7 @@
       undoButton.className = 'text-blue-600 underline hover:text-blue-800';
       undoButton.onclick = () => undoSave(recipe.id);
       confirmation.appendChild(undoButton);
-      console.log(`Applied confirmation styles for recipe ${recipe.id}: text-green-600 bg-green-50 p-2 rounded-md`); // Debug
+      console.log(`Applied confirmation styles for recipe ${recipe.id}: text-green-600 bg-green-50 p-2 rounded-md`);
       setTimeout(() => {
         confirmation.classList.add('hidden');
         confirmation.textContent = '';
@@ -193,24 +190,24 @@
 
     // Undo save action
     function undoSave(recipeId) {
-      console.log('undoSave called with ID:', recipeId); // Debug
+      console.log('undoSave called with ID:', recipeId);
       const card = document.querySelector(`[data-recipe-id="${recipeId}"]`);
       const recipe = generatedRecipes.find(r => r.id === recipeId);
       if (!recipe || !card) {
-        console.error('Recipe or card not found for ID:', recipeId); // Debug
+        console.error('Recipe or card not found for ID:', recipeId);
         return;
       }
       const recipeKey = `${recipe.name}-${recipe.cuisine}`.toLowerCase();
       let savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
       savedRecipes = savedRecipes.filter(r => `${r.name}-${r.cuisine}`.toLowerCase() !== recipeKey);
       localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
-      console.log('Undid save for recipe:', recipe.name); // Debug
+      console.log('Undid save for recipe:', recipe.name);
       updateSavedRecipes();
       const confirmation = card.querySelector('.save-confirmation');
       confirmation.textContent = 'Undo successful!';
       confirmation.classList.remove('text-green-600', 'bg-green-50', 'text-yellow-600', 'bg-yellow-50');
       confirmation.classList.add('text-blue-600', 'bg-blue-50', 'p-2', 'rounded-md');
-      console.log(`Applied confirmation styles for recipe ${recipeId} (undo): text-blue-600 bg-blue-50 p-2 rounded-md`); // Debug
+      console.log(`Applied confirmation styles for recipe ${recipeId} (undo): text-blue-600 bg-blue-50 p-2 rounded-md`);
       setTimeout(() => {
         confirmation.classList.add('hidden');
         confirmation.classList.remove('text-blue-600', 'bg-blue-50');
@@ -220,42 +217,42 @@
 
     // Save recipe by ID
     function saveRecipeById(recipeId) {
-      console.log('saveRecipeById called with ID:', recipeId); // Debug
+      console.log('saveRecipeById called with ID:', recipeId);
       const card = document.querySelector(`[data-recipe-id="${recipeId}"]`);
       const recipe = generatedRecipes.find(r => r.id === recipeId);
       if (recipe && card) {
         saveRecipe(recipe, card);
       } else {
-        console.error('Recipe or card not found for ID:', recipeId); // Debug
+        console.error('Recipe or card not found for ID:', recipeId);
       }
     }
 
     // Remove recipe from localStorage
     function removeRecipe(recipeKey) {
-      console.log('Attempting to remove recipe:', recipeKey); // Debug
+      console.log('Attempting to remove recipe:', recipeKey);
       let savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
       savedRecipes = savedRecipes.filter(r => `${r.name}-${r.cuisine}`.toLowerCase() !== recipeKey);
       localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
-      console.log('Removed recipe:', recipeKey); // Debug
+      console.log('Removed recipe:', recipeKey);
       updateSavedRecipes();
     }
 
     // Download saved recipes as PDF
     function downloadSavedRecipes() {
-      console.log('downloadSavedRecipes called'); // Debug
+      console.log('downloadSavedRecipes called');
       const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
       if (savedRecipes.length === 0) {
-        console.log('No recipes to download'); // Debug
+        console.log('No recipes to download');
         return;
       }
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      let y = 10; // Starting y-position (mm)
+      let y = 10;
       const margin = 10;
       const lineHeight = 5;
-      const pageHeight = 297; // A4 height in mm
-      const maxWidth = 190; // A4 width (210mm) - 2 * margin
+      const pageHeight = 297;
+      const maxWidth = 190;
 
       savedRecipes.forEach((recipe, index) => {
         if (y > pageHeight - 20) {
@@ -272,7 +269,6 @@
         doc.text(`Cuisine: ${recipe.cuisine}`, margin, y);
         y += lineHeight;
 
-        // Add rating to PDF
         doc.text(`Rating: ${recipe.rating || 0}/5`, margin, y);
         y += lineHeight;
 
@@ -316,7 +312,7 @@
       });
 
       doc.save('recipes.pdf');
-      console.log('Downloaded saved recipes as PDF:', savedRecipes.length); // Debug
+      console.log('Downloaded saved recipes as PDF:', savedRecipes.length);
     }
 
     // Update saved recipes section
@@ -346,7 +342,7 @@
         downloadButton.classList.add('opacity-50', 'cursor-not-allowed');
         savedRecipesList.innerHTML = '';
       }
-      console.log('Updated saved recipes:', savedRecipes.length); // Debug
+      console.log('Updated saved recipes:', savedRecipes.length);
     }
 
     // Update recipe counter
@@ -359,7 +355,7 @@
           counter = document.getElementById('recipeCounter');
         }
         counter.textContent = `${recipeCount} of ${maxRecipes} recipes generated`;
-        console.log('Updated recipe counter:', counter.textContent); // Debug
+        console.log('Updated recipe counter:', counter.textContent);
       } else if (counter) {
         counter.remove();
       }
@@ -379,8 +375,7 @@
       `);
 
       try {
-        // Call the Netlify Function proxy
-        console.log('Sending request to Netlify Function proxy...'); // Debug
+        console.log('Sending request to Netlify Function proxy...');
         const response = await fetch('/.netlify/functions/proxy', {
           method: 'POST',
           body: JSON.stringify({
@@ -398,10 +393,9 @@
         }
 
         const data = await response.json();
-        console.log('Proxy response received:', data); // Debug
-        console.log('Raw content:', data.choices[0].message.content); // Debug
+        console.log('Proxy response received:', data);
+        console.log('Raw content:', data.choices[0].message.content);
 
-        // Clean and parse response
         const cleanedContent = cleanJsonResponse(data.choices[0].message.content);
         let recipe;
         try {
@@ -411,21 +405,17 @@
           throw new Error('Something went wrong with the recipe data. Please try again!');
         }
 
-        // Increment recipe count
         recipeCount++;
 
-        // Store recipe with ID
         const recipeId = `recipe-${recipeCount}`;
         generatedRecipes.push({ id: recipeId, ...recipe });
-        console.log('Stored recipe with ID:', recipeId); // Debug
+        console.log('Stored recipe with ID:', recipeId);
 
-        // Track cuisine
         if (recipe.cuisine) {
           usedCuisines.push(recipe.cuisine);
-          console.log('Added cuisine to used list:', recipe.cuisine); // Debug
+          console.log('Added cuisine to used list:', recipe.cuisine);
         }
 
-        // Prepare recipe card HTML with Save Recipe button, rating, undo rating, and cuisine badge
         const recipeHtml = recipe.name && recipe.instructions !== 'No recipe possible with these ingredients.'
           ? `
             <div data-recipe-id="${recipeId}" class="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200 animate-fade-in-up relative">
@@ -453,15 +443,12 @@
           `
           : '<p class="text-gray-600 mt-4 animate-fade-in-up">No recipe possible with these ingredients. Try different combinations!</p>';
 
-        // Replace loading state with recipe card
-        resultsDiv.lastElementChild.remove(); // Remove loading spinner
+        resultsDiv.lastElementChild.remove();
         resultsDiv.insertAdjacentHTML('beforeend', recipeHtml);
-        console.log('Animation triggered for recipe card:', recipe.name || 'No recipe'); // Debug
+        console.log('Animation triggered for recipe card:', recipe.name || 'No recipe');
 
-        // Update recipe counter
         updateRecipeCounter();
 
-        // Show action buttons if under max recipes
         if (recipeCount < maxRecipes) {
           actionButtonsDiv.classList.remove('hidden');
         } else {
@@ -469,8 +456,8 @@
           actionButtonsDiv.classList.add('hidden');
         }
       } catch (error) {
-        console.error('Error generating recipe:', error); // Debug
-        resultsDiv.lastElementChild.remove(); // Remove loading spinner
+        console.error('Error generating recipe:', error);
+        resultsDiv.lastElementChild.remove();
         resultsDiv.insertAdjacentHTML('beforeend', `
           <p class="text-red-500 bg-red-50 p-3 rounded-md mt-4 animate-fade-in-up">${error.message}</p>
         `);
@@ -479,52 +466,47 @@
     }
 
     async function findRecipes() {
-      console.log('Find Recipes clicked!'); // Debug
+      console.log('Find Recipes clicked!');
       const input = document.getElementById('ingredientsInput').value.trim();
-      console.log('Ingredients:', input); // Debug
+      console.log('Ingredients:', input);
       const resultsDiv = document.getElementById('results');
       const actionButtonsDiv = document.getElementById('actionButtons');
 
-      // Validate inputs
       const validation = validateIngredients(input);
       if (!validation.valid) {
         resultsDiv.innerHTML = `<p class="text-red-500 bg-red-50 p-3 rounded-md">${validation.message}</p>`;
-        console.log('Validation failed:', validation.message); // Debug
-        document.getElementById('ingredientsInput').value = ''; // Clear invalid input
+        console.log('Validation failed:', validation.message);
+        document.getElementById('ingredientsInput').value = '';
         return;
       }
 
-      // Reset state
       resultsDiv.innerHTML = '';
       actionButtonsDiv.classList.add('hidden');
       recipeCount = 0;
       usedCuisines = [];
       generatedRecipes = [];
       recipeRatings = {};
-      console.log('Reset usedCuisines, generatedRecipes, and recipeRatings'); // Debug
+      console.log('Reset usedCuisines, generatedRecipes, and recipeRatings');
 
-      // Store inputs
       userIngredients = sanitizeInput(input).toLowerCase().split(',').map(item => item.trim());
-      console.log('Processed ingredients:', userIngredients); // Debug
+      console.log('Processed ingredients:', userIngredients);
 
-      // Generate first recipe
       await generateRecipe();
     }
 
     async function generateAnother() {
-      console.log('Generate Another clicked!'); // Debug
+      console.log('Generate Another clicked!');
       if (recipeCount < maxRecipes) {
         await generateRecipe();
       }
     }
 
     function clearAll() {
-      console.log('Clear All clicked!'); // Debug
+      console.log('Clear All clicked!');
       const resultsDiv = document.getElementById('results');
       const actionButtonsDiv = document.getElementById('actionButtons');
       const ingredientsInput = document.getElementById('ingredientsInput');
 
-      // Reset state
       userIngredients = [];
       recipeCount = 0;
       usedCuisines = [];
@@ -535,13 +517,22 @@
       actionButtonsDiv.classList.add('hidden');
       ingredientsInput.value = '';
       updateSavedRecipes();
-      console.log('State reset'); // Debug
+      console.log('State reset');
     }
+
+    // Add Enter key event listener for ingredients input
+    document.getElementById('ingredientsInput').addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        findRecipes();
+      }
+    });
 
     // Initialize saved recipes on page load
     document.addEventListener('DOMContentLoaded', () => {
       updateSavedRecipes();
     });
   </script>
+  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93de1676dedec000',t:'MTc0NjkyODg3OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
