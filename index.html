@@ -101,6 +101,14 @@
       'none': ''
     };
 
+    // Lists of non-vegan and non-vegetarian ingredients
+    const nonVeganIngredients = [
+      'chicken', 'beef', 'pork', 'lamb', 'turkey', 'duck', 'goose', 'fish', 'salmon', 'tuna', 'shrimp', 'crab', 'lobster', 'egg', 'eggs', 'milk', 'cheese', 'yogurt', 'butter', 'cream', 'gelatin', 'honey'
+    ];
+    const nonVegetarianIngredients = [
+      'chicken', 'beef', 'pork', 'lamb', 'turkey', 'duck', 'goose', 'fish', 'salmon', 'tuna', 'shrimp', 'crab', 'lobster'
+    ];
+
     // Store ratings for generated recipes (not saved yet)
     let recipeRatings = {};
 
@@ -111,8 +119,9 @@
       return div.innerHTML.replace(/[<>&;]/g, '');
     }
 
-    // Validate ingredients (letters, spaces, commas only)
-    function validateIngredients(input) {
+    // Validate ingredients (letters, spaces, commas, and dietary preference)
+    function validateIngredients(input, dietaryPreference) {
+      // Basic format validation
       if (!input.trim()) {
         return { valid: false, message: 'Oops, please enter at least one ingredient (e.g., chicken, rice)!' };
       }
@@ -124,6 +133,31 @@
       if (ingredients.some(item => !item)) {
         return { valid: false, message: 'Ingredients can’t be empty or just spaces. Try again (e.g., chicken, rice)!' };
       }
+
+      // Dietary preference validation
+      const lowerCaseIngredients = ingredients.map(item => item.toLowerCase());
+      if (dietaryPreference === 'vegan') {
+        const invalidIngredients = lowerCaseIngredients.filter(ing => 
+          nonVeganIngredients.some(nonVegan => ing.includes(nonVegan))
+        );
+        if (invalidIngredients.length > 0) {
+          return { 
+            valid: false, 
+            message: `The following ingredients are not vegan: ${invalidIngredients.join(', ')}. Please use vegan-friendly ingredients (e.g., tofu, spinach).`
+          };
+        }
+      } else if (dietaryPreference === 'vegetarian') {
+        const invalidIngredients = lowerCaseIngredients.filter(ing => 
+          nonVegetarianIngredients.some(nonVeg => ing.includes(nonVeg))
+        );
+        if (invalidIngredients.length > 0) {
+          return { 
+            valid: false, 
+            message: `The following ingredients are not vegetarian: ${invalidIngredients.join(', ')}. Please use vegetarian-friendly ingredients (e.g., cheese, spinach).`
+          };
+        }
+      }
+
       return { valid: true, message: '' };
     }
 
@@ -415,7 +449,7 @@
           body: JSON.stringify({
             ingredients: userIngredients,
             usedCuisines: usedCuisines,
-            dietaryPreference: dietaryPreference // Pass dietary preference
+            dietaryPreference: dietaryPreference
           })
         });
 
@@ -443,7 +477,7 @@
         recipeCount++;
 
         const recipeId = `recipe-${recipeCount}`;
-        recipe.dietaryPreference = dietaryPreference; // Store dietary preference with recipe
+        recipe.dietaryPreference = dietaryPreference;
         generatedRecipes.push({ id: recipeId, ...recipe });
         console.log('Stored recipe with ID:', recipeId);
 
@@ -498,14 +532,14 @@
     async function findRecipes() {
       console.log('Find Recipes clicked!');
       const input = document.getElementById('ingredientsInput').value.trim();
-      dietaryPreference = document.getElementById('dietaryPreference').value; // Get dietary preference
+      dietaryPreference = document.getElementById('dietaryPreference').value;
       console.log('Ingredients:', input);
       console.log('Dietary Preference:', dietaryPreference);
       const resultsDiv = document.getElementById('results');
       const actionButtonsDiv = document.getElementById('actionButtons');
       const clearButtonDiv = document.getElementById('clearButton');
 
-      const validation = validateIngredients(input);
+      const validation = validateIngredients(input, dietaryPreference);
       if (!validation.valid) {
         resultsDiv.innerHTML = `<p class="text-red-500 bg-red-50 p-3 rounded-md">${validation.message}</p>`;
         console.log('Validation failed:', validation.message);
