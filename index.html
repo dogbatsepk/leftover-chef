@@ -41,58 +41,6 @@
     <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">Leftover Ingredients Chef</h1>
     <p class="text-center text-gray-600 mb-4">Enter your leftover ingredients (e.g., chicken, spinach, soy sauce), separated by commas, and get recipe ideas!</p>
     
-    <!-- Username Input -->
-    <div class="mb-4">
-      <label for="usernameInput" class="block text-sm font-medium text-gray-700 mb-1">Your Username:</label>
-      <input id="usernameInput" type="text" placeholder="Enter your username" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-    </div>
-    
-    <!-- Leftover Challenge Section (Commented Out) -->
-    <!--
-    <div id="leftoverChallenge" class="mb-4 p-4 bg-yellow-50 rounded-md text-center">
-      <h2 class="text-lg font-bold text-yellow-800 flex items-center justify-center">
-        🍳 Leftover Challenge 🍳
-        <span class="ml-2 text-sm bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">New!</span>
-      </h2>
-      <p class="text-yellow-700 mt-2">Earn points by using more ingredients!</p>
-      <p class="text-yellow-700">1-2 ingredients: 2 pts | 3-4 ingredients: 5 pts | 5+ ingredients: 10 pts</p>
-      <p id="totalPoints" class="text-lg font-bold text-yellow-800 mt-2">Total Points: 0</p>
-      <p id="milestoneMessage" class="text-yellow-700 mt-2 hidden"></p>
-      <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-        <div id="progressBar" class="bg-yellow-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-      </div>
-      <div id="badges" class="mt-4 flex justify-center flex-wrap gap-2">
-        <span id="badge-first-recipe" class="hidden bg-green-100 text-green-600 px-2 py-1 rounded-full text-sm">🏅 First Recipe</span>
-        <span id="badge-recipe-master" class="hidden bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-sm">⭐ Recipe Master</span>
-        <span id="badge-recipe-saver" class="hidden bg-purple-100 text-purple-600 px-2 py-1 rounded-full text-sm">💾 Recipe Saver</span>
-      </div>
-      <!-- Leaderboard -->
-      <div id="leaderboard" class="mt-4">
-        <h3 class="text-md font-bold text-yellow-800">🏆 Leaderboard</h3>
-        <ul id="leaderboardList" class="mt-2 text-yellow-700"></ul>
-      </div>
-    </div>
-    -->
-    
-    <!-- Suggested Ingredients Dropdown -->
-    <div class="mb-4">
-      <label for="ingredientSelect" class="block text-sm font-medium text-gray-700 mb-1">Suggested Ingredients:</label>
-      <select id="ingredientSelect" multiple class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-20 overflow-y-auto">
-        <option value="" disabled selected>Select an ingredient</option>
-        <option value="chicken">Chicken</option>
-        <option value="rice">Rice</option>
-        <option value="spinach">Spinach</option>
-        <option value="soy sauce">Soy Sauce</option>
-        <option value="carrots">Carrots</option>
-        <option value="potatoes">Potatoes</option>
-        <option value="broccoli">Broccoli</option>
-        <option value="pasta">Pasta</option>
-        <option value="tomatoes">Tomatoes</option>
-        <option value="cheese">Cheese</option>
-      </select>
-      <p class="text-sm text-gray-500 mt-1">Hold Ctrl (or Cmd) to select multiple ingredients.</p>
-    </div>
-    
     <div class="mb-4">
       <input id="ingredientsInput" type="text" placeholder="e.g., chicken, spinach, soy sauce" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
     </div>
@@ -121,15 +69,7 @@
     let recipeCount = 0;
     let usedCuisines = [];
     let generatedRecipes = [];
-    let username = localStorage.getItem('username') || ''; // Initialize username from localStorage
     const maxRecipes = 5;
-
-    // Comment out gamification-related variables
-    /*
-    let totalPoints = parseInt(localStorage.getItem('totalPoints') || '0'); // Initialize points from localStorage
-    let leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
-    let badges = JSON.parse(localStorage.getItem('badges') || '[]');
-    */
 
     // Cuisine to emoji mapping
     const cuisineEmojis = {
@@ -144,133 +84,6 @@
     // Store ratings for generated recipes (not saved yet)
     let recipeRatings = {};
 
-    // Comment out gamification-related functions
-    /*
-    // Update total points display, leaderboard, and progress bar
-    function updatePointsDisplay() {
-      const totalPointsElement = document.getElementById('totalPoints');
-      const progressBar = document.getElementById('progressBar');
-      const milestoneMessageElement = document.getElementById('milestoneMessage');
-
-      // Update total points
-      totalPointsElement.textContent = `Total Points: ${totalPoints}`;
-      localStorage.setItem('totalPoints', totalPoints.toString());
-      console.log('Updated total points:', totalPoints); // Debug
-
-      // Define milestones
-      const milestones = [10, 25, 50];
-      let nextMilestone = milestones.find(m => totalPoints < m) || (Math.floor(totalPoints / 50) + 1) * 50;
-
-      // Update milestone message
-      if (totalPoints >= 50) {
-        milestoneMessageElement.textContent = "You're a Leftover Legend! 🎉";
-        milestoneMessageElement.classList.remove('hidden');
-      } else if (totalPoints >= 25) {
-        milestoneMessageElement.textContent = "Great job, Master Chef! 👨‍🍳";
-        milestoneMessageElement.classList.remove('hidden');
-      } else if (totalPoints >= 10) {
-        milestoneMessageElement.textContent = "Nice work, Kitchen Star! ⭐";
-        milestoneMessageElement.classList.remove('hidden');
-      } else {
-        milestoneMessageElement.classList.add('hidden');
-      }
-
-      // Calculate progress toward the next milestone
-      const previousMilestone = totalPoints < 10 ? 0 : milestones.filter(m => m <= totalPoints).pop() || (Math.floor(totalPoints / 50) * 50);
-      const progressRange = nextMilestone - previousMilestone;
-      const progress = ((totalPoints - previousMilestone) / progressRange) * 100;
-      progressBar.style.width = `${progress}%`;
-      console.log(`Progress: ${progress}% toward ${nextMilestone} (from ${previousMilestone})`); // Debug
-
-      // Update leaderboard with all users
-      updateLeaderboard();
-    }
-
-    // Update the leaderboard with all users' scores
-    function updateLeaderboard() {
-      // Load existing leaderboard from localStorage
-      let storedLeaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
-      console.log('Loaded leaderboard from localStorage:', storedLeaderboard); // Debug
-
-      // Merge current user's score with stored leaderboard
-      if (username && totalPoints > 0) {
-        const existingEntryIndex = storedLeaderboard.findIndex(entry => entry.username === username);
-        if (existingEntryIndex !== -1) {
-          storedLeaderboard[existingEntryIndex].points = Math.max(storedLeaderboard[existingEntryIndex].points, totalPoints); // Keep highest score
-        } else {
-          storedLeaderboard.push({ username, points: totalPoints });
-        }
-        // Sort by points (descending) and limit to top 5
-        storedLeaderboard.sort((a, b) => b.points - a.points);
-        leaderboard = storedLeaderboard.slice(0, 5);
-        localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
-        console.log('Saved leaderboard to localStorage:', leaderboard); // Debug
-      }
-
-      // Display leaderboard
-      const leaderboardList = document.getElementById('leaderboardList');
-      leaderboardList.innerHTML = leaderboard.length > 0
-        ? leaderboard.map((entry, index) => `
-            <li class="flex justify-between items-center py-1 ${entry.username === username ? 'bg-yellow-200' : ''}">
-              <span class="flex items-center">
-                <span class="mr-2 text-lg">
-                  ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                </span>
-                ${entry.username}
-              </span>
-              <span>${entry.points} pts</span>
-            </li>
-          `).join('')
-        : '<li class="text-center">No scores yet. Be the first!</li>';
-    }
-
-    // Award points based on number of ingredients
-    function awardPoints(ingredientsCount) {
-      let points = 0;
-      if (ingredientsCount <= 2) {
-        points = 2;
-      } else if (ingredientsCount <= 4) {
-        points = 5;
-      } else {
-        points = 10;
-      }
-      totalPoints += points;
-      console.log(`Awarded ${points} points for ${ingredientsCount} ingredients. Total now: ${totalPoints}`); // Debug
-      updatePointsDisplay();
-      checkAchievements();
-    }
-
-    // Check and award achievements
-    function checkAchievements() {
-      const badgeFirstRecipe = document.getElementById('badge-first-recipe');
-      const badgeRecipeMaster = document.getElementById('badge-recipe-master');
-      const badgeRecipeSaver = document.getElementById('badge-recipe-saver');
-
-      if (recipeCount >= 1 && !badges.includes('first-recipe')) {
-        badges.push('first-recipe');
-        badgeFirstRecipe.classList.remove('hidden');
-      }
-      if (recipeCount >= 5 && !badges.includes('recipe-master')) {
-        badges.push('recipe-master');
-        badgeRecipeMaster.classList.remove('hidden');
-      }
-
-      localStorage.setItem('badges', JSON.stringify(badges));
-      console.log('Updated badges:', badges); // Debug
-    }
-
-    // Award save achievement
-    function awardSaveAchievement() {
-      const badgeRecipeSaver = document.getElementById('badge-recipe-saver');
-      if (!badges.includes('recipe-saver')) {
-        badges.push('recipe-saver');
-        badgeRecipeSaver.classList.remove('hidden');
-        localStorage.setItem('badges', JSON.stringify(badges));
-        console.log('Awarded recipe-saver badge'); // Debug
-      }
-    }
-    */
-
     // Simple input sanitization to prevent XSS
     function sanitizeInput(input) {
       const div = document.createElement('div');
@@ -280,28 +93,16 @@
 
     // Validate ingredients (letters, spaces, commas only)
     function validateIngredients(input) {
-      if (!input.trim() && !document.getElementById('ingredientSelect').selectedOptions.length) {
-        return { valid: false, message: 'Oops, please enter or select at least one ingredient (e.g., chicken, rice)!' };
+      if (!input.trim()) {
+        return { valid: false, message: 'Oops, please enter at least one ingredient (e.g., chicken, rice)!' };
       }
       const validPattern = /^[a-zA-Z\s,'-]*$/;
-      if (input && !validPattern.test(input)) {
+      if (!validPattern.test(input)) {
         return { valid: false, message: 'Please use valid ingredients (letters, spaces, commas only, e.g., chicken, rice)!' };
       }
-      const ingredients = input.split(',').map(item => item.trim()).filter(item => item);
+      const ingredients = input.split(',').map(item => item.trim());
       if (ingredients.some(item => !item)) {
         return { valid: false, message: 'Ingredients can’t be empty or just spaces. Try again (e.g., chicken, rice)!' };
-      }
-      return { valid: true, message: '' };
-    }
-
-    // Validate username (letters, numbers, spaces, underscores, hyphens only)
-    function validateUsername(input) {
-      if (!input.trim()) {
-        return { valid: false, message: 'Please enter a username!' };
-      }
-      const validPattern = /^[a-zA-Z0-9\s_-]*$/;
-      if (!validPattern.test(input)) {
-        return { valid: false, message: 'Username can only contain letters, numbers, spaces, underscores, or hyphens!' };
       }
       return { valid: true, message: '' };
     }
@@ -372,7 +173,6 @@
       }
       localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
       updateSavedRecipes();
-      // awardSaveAchievement(); // Commented out as it relates to badges
       const confirmation = card.querySelector('.save-confirmation');
       confirmation.textContent = 'Recipe saved! ';
       confirmation.classList.remove('hidden', 'text-yellow-600', 'bg-yellow-50', 'text-blue-600', 'bg-blue-50');
@@ -625,9 +425,6 @@
           console.log('Added cuisine to used list:', recipe.cuisine); // Debug
         }
 
-        // Comment out points awarding
-        // awardPoints(userIngredients.length);
-
         // Prepare recipe card HTML with Save Recipe button, rating, undo rating, and cuisine badge
         const recipeHtml = recipe.name && recipe.instructions !== 'No recipe possible with these ingredients.'
           ? `
@@ -684,27 +481,13 @@
     async function findRecipes() {
       console.log('Find Recipes clicked!'); // Debug
       const input = document.getElementById('ingredientsInput').value.trim();
-      const usernameInput = document.getElementById('usernameInput').value.trim();
-      console.log('Manual input:', input); // Debug
+      console.log('Ingredients:', input); // Debug
       const resultsDiv = document.getElementById('results');
       const actionButtonsDiv = document.getElementById('actionButtons');
-      const select = document.getElementById('ingredientSelect');
-      const selectedOptions = Array.from(select.selectedOptions).map(option => option.value);
-
-      // Validate username
-      const usernameValidation = validateUsername(usernameInput);
-      if (!usernameValidation.valid) {
-        resultsDiv.innerHTML = `<p class="text-red-500 bg-red-50 p-3 rounded-md">${usernameValidation.message}</p>`;
-        console.log('Username validation failed:', usernameValidation.message); // Debug
-        return;
-      }
-      username = sanitizeInput(usernameInput);
-      localStorage.setItem('username', username);
-      console.log('Username set:', username); // Debug
 
       // Validate inputs
       const validation = validateIngredients(input);
-      if (!validation.valid && selectedOptions.length === 0) {
+      if (!validation.valid) {
         resultsDiv.innerHTML = `<p class="text-red-500 bg-red-50 p-3 rounded-md">${validation.message}</p>`;
         console.log('Validation failed:', validation.message); // Debug
         document.getElementById('ingredientsInput').value = ''; // Clear invalid input
@@ -721,14 +504,8 @@
       console.log('Reset usedCuisines, generatedRecipes, and recipeRatings'); // Debug
 
       // Store inputs
-      userIngredients = [];
-      if (input) {
-        userIngredients = sanitizeInput(input).toLowerCase().split(',').map(item => item.trim());
-      }
-      if (selectedOptions.length > 0) {
-        userIngredients = [...userIngredients, ...selectedOptions.map(item => item.toLowerCase())];
-      }
-      console.log('Processed ingredients (manual + selected):', userIngredients); // Debug
+      userIngredients = sanitizeInput(input).toLowerCase().split(',').map(item => item.trim());
+      console.log('Processed ingredients:', userIngredients); // Debug
 
       // Generate first recipe
       await generateRecipe();
@@ -746,8 +523,6 @@
       const resultsDiv = document.getElementById('results');
       const actionButtonsDiv = document.getElementById('actionButtons');
       const ingredientsInput = document.getElementById('ingredientsInput');
-      const ingredientSelect = document.getElementById('ingredientSelect');
-      const usernameInput = document.getElementById('usernameInput');
 
       // Reset state
       userIngredients = [];
@@ -755,21 +530,10 @@
       usedCuisines = [];
       generatedRecipes = [];
       recipeRatings = {};
-      username = '';
       localStorage.removeItem('savedRecipes');
-      localStorage.removeItem('username'); // Clear username from storage
-      // Comment out gamification-related storage clearing
-      /*
-      localStorage.removeItem('totalPoints'); // Clear points from storage
-      localStorage.removeItem('badges'); // Clear badges from storage
-      leaderboard = leaderboard.filter(entry => entry.username !== username); // Remove current user from leaderboard
-      localStorage.setItem('leaderboard', JSON.stringify(leaderboard)); // Update leaderboard in storage
-      */
       resultsDiv.innerHTML = '';
       actionButtonsDiv.classList.add('hidden');
       ingredientsInput.value = '';
-      usernameInput.value = '';
-      ingredientSelect.selectedIndex = 0; // Reset dropdown to default
       updateSavedRecipes();
       console.log('State reset'); // Debug
     }
@@ -777,19 +541,6 @@
     // Initialize saved recipes on page load
     document.addEventListener('DOMContentLoaded', () => {
       updateSavedRecipes();
-      const usernameInput = document.getElementById('usernameInput');
-      usernameInput.value = username; // Restore username
-      // Comment out gamification-related initialization
-      /*
-      updatePointsDisplay();
-      const badgeFirstRecipe = document.getElementById('badge-first-recipe');
-      const badgeRecipeMaster = document.getElementById('badge-recipe-master');
-      const badgeRecipeSaver = document.getElementById('badge-recipe-saver');
-      if (badges.includes('first-recipe')) badgeFirstRecipe.classList.remove('hidden');
-      if (badges.includes('recipe-master')) badgeRecipeMaster.classList.remove('hidden');
-      if (badges.includes('recipe-saver')) badgeRecipeSaver.classList.remove('hidden');
-      updateLeaderboard(); // Initialize leaderboard display
-      */
     });
   </script>
 </body>
