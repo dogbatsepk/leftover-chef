@@ -45,6 +45,16 @@
       <input id="ingredientsInput" type="text" placeholder="e.g., chicken, spinach, soy sauce" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
     </div>
     
+    <!-- Dietary Preference Dropdown -->
+    <div class="mb-4">
+      <label for="dietaryPreference" class="block text-sm font-medium text-gray-700 mb-1">Dietary Preference:</label>
+      <select id="dietaryPreference" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="none">No Preference</option>
+        <option value="vegetarian">Vegetarian</option>
+        <option value="vegan">Vegan</option>
+      </select>
+    </div>
+    
     <button onclick="findRecipes()" class="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition">Find Recipes</button>
     
     <div id="results" class="mt-6"></div>
@@ -68,6 +78,7 @@
 
     // Store state
     let userIngredients = [];
+    let dietaryPreference = 'none'; // Default to no preference
     let recipeCount = 0;
     let usedCuisines = [];
     let generatedRecipes = [];
@@ -81,6 +92,13 @@
       'Indian': '🍛',
       'American': '🍔',
       'Mediterranean': '🥙'
+    };
+
+    // Dietary preference to emoji mapping
+    const dietEmojis = {
+      'vegan': '🌱',
+      'vegetarian': '🥗',
+      'none': ''
     };
 
     // Store ratings for generated recipes (not saved yet)
@@ -155,13 +173,13 @@
       undoButton.classList.add('hidden');
     }
 
-    // Save recipe to localStorage with rating
+    // Save recipe to localStorage with rating and dietary preference
     function saveRecipe(recipe, card) {
       console.log('Attempting to save recipe:', recipe.name);
       const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
       const recipeKey = `${recipe.name}-${recipe.cuisine}`.toLowerCase();
       const rating = getRecipeRating(recipe.id);
-      const recipeWithRating = { ...recipe, rating };
+      const recipeWithRating = { ...recipe, rating, dietaryPreference: recipe.dietaryPreference };
       const existingIndex = savedRecipes.findIndex(r => `${r.name}-${r.cuisine}`.toLowerCase() === recipeKey);
       if (existingIndex !== -1) {
         savedRecipes[existingIndex] = recipeWithRating;
@@ -271,6 +289,9 @@
         doc.text(`Cuisine: ${recipe.cuisine}`, margin, y);
         y += lineHeight;
 
+        doc.text(`Dietary Preference: ${recipe.dietaryPreference.charAt(0).toUpperCase() + recipe.dietaryPreference.slice(1)}`, margin, y);
+        y += lineHeight;
+
         doc.text(`Rating: ${recipe.rating || 0}/5`, margin, y);
         y += lineHeight;
 
@@ -332,6 +353,7 @@
           <div class="mt-4 p-4 bg-gray-100 rounded-md border border-gray-200 animate-fade-in-up">
             <h3 class="text-lg font-bold text-gray-800">${recipe.name}</h3>
             <p class="text-gray-600 mt-2"><strong>Cuisine:</strong> ${recipe.cuisine} <span class="ml-2 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">${cuisineEmojis[recipe.cuisine] || '🍴'}</span></p>
+            <p class="text-gray-600 mt-2"><strong>Dietary Preference:</strong> ${recipe.dietaryPreference.charAt(0).toUpperCase() + recipe.dietaryPreference.slice(1)} <span class="ml-2 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">${dietEmojis[recipe.dietaryPreference]}</span></p>
             <p class="text-gray-600 mt-2"><strong>Rating:</strong> ${recipe.rating || 0}/5 <span class="text-yellow-500">${'★'.repeat(recipe.rating || 0)}${'☆'.repeat(5 - (recipe.rating || 0))}</span></p>
             <p class="text-gray-600 mt-2"><strong>Ingredients:</strong> ${recipe.ingredients.join(', ')}</p>
             <p class="text-gray-600 mt-2"><strong>Instructions:</strong> ${recipe.instructions}</p>
@@ -360,14 +382,12 @@
         }
         counter.textContent = `${recipeCount} of ${maxRecipes} recipes generated`;
         console.log('Updated recipe counter:', counter.textContent);
-        // Show Clear All button whenever there are recipes
         clearButtonDiv.classList.remove('hidden');
       } else if (counter) {
         counter.remove();
         clearButtonDiv.classList.add('hidden');
       }
 
-      // Show "Generate Another" button only if under max recipes
       if (recipeCount < maxRecipes) {
         actionButtonsDiv.classList.remove('hidden');
       } else {
@@ -381,7 +401,6 @@
       const resultsDiv = document.getElementById('results');
       const actionButtonsDiv = document.getElementById('actionButtons');
 
-      // Show loading state
       resultsDiv.insertAdjacentHTML('beforeend', `
         <div class="flex justify-center items-center mt-4">
           <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
@@ -395,7 +414,8 @@
           method: 'POST',
           body: JSON.stringify({
             ingredients: userIngredients,
-            usedCuisines: usedCuisines
+            usedCuisines: usedCuisines,
+            dietaryPreference: dietaryPreference // Pass dietary preference
           })
         });
 
@@ -423,6 +443,7 @@
         recipeCount++;
 
         const recipeId = `recipe-${recipeCount}`;
+        recipe.dietaryPreference = dietaryPreference; // Store dietary preference with recipe
         generatedRecipes.push({ id: recipeId, ...recipe });
         console.log('Stored recipe with ID:', recipeId);
 
@@ -439,6 +460,7 @@
                 <span class="ml-2 text-lg">👨‍🍳</span>
               </h2>
               <p class="text-gray-600 mt-2"><strong>Cuisine:</strong> ${recipe.cuisine} <span class="ml-2 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">${cuisineEmojis[recipe.cuisine] || '🍴'}</span></p>
+              <p class="text-gray-600 mt-2"><strong>Dietary Preference:</strong> ${dietaryPreference.charAt(0).toUpperCase() + dietaryPreference.slice(1)} <span class="ml-2 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">${dietEmojis[dietaryPreference]}</span></p>
               <p class="text-gray-600 mt-2"><strong>Ingredients:</strong> ${recipe.ingredients.join(', ')}</p>
               <p class="text-gray-600 mt-2"><strong>Instructions:</strong> ${recipe.instructions}</p>
               <button onclick="saveRecipeById('${recipeId}')" class="mt-2 bg-green-100 text-green-600 px-3 py-1 rounded-md hover:bg-green-200 transition">Save Recipe</button>
@@ -476,7 +498,9 @@
     async function findRecipes() {
       console.log('Find Recipes clicked!');
       const input = document.getElementById('ingredientsInput').value.trim();
+      dietaryPreference = document.getElementById('dietaryPreference').value; // Get dietary preference
       console.log('Ingredients:', input);
+      console.log('Dietary Preference:', dietaryPreference);
       const resultsDiv = document.getElementById('results');
       const actionButtonsDiv = document.getElementById('actionButtons');
       const clearButtonDiv = document.getElementById('clearButton');
@@ -517,8 +541,10 @@
       const actionButtonsDiv = document.getElementById('actionButtons');
       const clearButtonDiv = document.getElementById('clearButton');
       const ingredientsInput = document.getElementById('ingredientsInput');
+      const dietaryPreferenceSelect = document.getElementById('dietaryPreference');
 
       userIngredients = [];
+      dietaryPreference = 'none';
       recipeCount = 0;
       usedCuisines = [];
       generatedRecipes = [];
@@ -528,6 +554,7 @@
       actionButtonsDiv.classList.add('hidden');
       clearButtonDiv.classList.add('hidden');
       ingredientsInput.value = '';
+      dietaryPreferenceSelect.value = 'none';
       updateSavedRecipes();
       console.log('State reset');
     }
