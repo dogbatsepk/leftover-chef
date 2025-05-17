@@ -48,6 +48,10 @@
       max-width: 600px;
       margin: 0 auto;
     }
+    /* About section styling */
+    .about-section {
+      background-color: white;
+    }
     /* Footer styling */
     .footer {
       background: linear-gradient(90deg, #fed7aa, #ffedd5);
@@ -66,14 +70,25 @@
 <body class="bg-gray-100 min-h-screen flex flex-col">
   <!-- Navbar -->
   <nav class="navbar p-4 shadow-lg">
-    <div class="max-w-7xl mx-auto flex justify-between items-center">
+    <div class="max-w-7xl mx-auto flex flex-col items-center">
       <h1 class="text-2xl font-bold text-gray-800">Leftover Ingredients Chef</h1>
-      <div class="space-x-4">
-        <a href="#" class="text-gray-600 hover:text-gray-800 transition">Home</a>
-        <a href="#" class="text-gray-600 hover:text-gray-800 transition">About</a>
-      </div>
     </div>
   </nav>
+
+  <!-- About Section -->
+  <section class="about-section py-6">
+    <div class="max-w-3xl mx-auto px-4">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4 animate-fade-in-up">About</h2>
+      <p class="text-gray-600 mb-4 animate-fade-in-up">
+        Leftover Ingredients Chef is your go-to solution for turning forgotten fridge items into delicious meals. 
+        We’ll help you whip up a recipe that’s both tasty and sustainable. 
+        Let’s reduce food waste, one creative dish at a time!
+      </p>
+      <p class="text-gray-600 italic text-center animate-fade-in-up">
+        “Cooking with what you have, made simple and fun.”
+      </p>
+    </div>
+  </section>
 
   <!-- Main Content -->
   <main class="flex-grow flex items-center justify-center p-6">
@@ -88,8 +103,7 @@
         </div>
       </div>
       
-      <h1 class="text-3xl font-bold text-center text-gray-800 mb-4 animate-fade-in-up">Leftover Ingredients Chef</h1>
-      <p class="text-center text-gray-600 mb-6 animate-fade-in-up">Turn your leftovers into delicious meals! Enter your ingredients (e.g., chicken, spinach, soy sauce), separated by commas, and get recipe ideas.</p>
+      <p class="text-gray-600 mb-6 animate-fade-in-up">Enter your leftover ingredients (e.g., chicken, spinach, soy sauce), separated by commas, and get recipe ideas.</p>
       
       <div class="mb-6 animate-fade-in-up">
         <input id="ingredientsInput" type="text" placeholder="e.g., chicken, spinach, soy sauce" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
