@@ -1,47 +1,102 @@
 const fetch = require('node-fetch');
 
-exports.handler = async (event) => {
-  const { ingredients, usedCuisines } = JSON.parse(event.body);
-  const apiKey = process.env.OPENAI_API_KEY; // Set in Netlify dashboard
+exports.handler = async function(event, context) {
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+    };
+  }
 
   try {
-    console.log('Received request with ingredients:', ingredients, 'and usedCuisines:', usedCuisines); // Debug
+    const body = JSON.parse(event.body);
+    const { ingredients, usedCuisines, dietaryPreference } = body;
+
+    if (!ingredients || ingredients.length === 0) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Ingredients are required' }),
+      };
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'API key not configured' }),
+      };
+    }
+
+    // Construct the prompt with emphasis on precision and safety
+    let prompt = `Generate a recipe using the following ingredients: ${ingredients.join(', ')}. Ensure measurements are specific, cooking methods are safe, and the recipe aligns with a ${dietaryPreference} diet (if "none", ignore dietary restrictions).`;
+    
+    // Add cuisine variety if usedCuisines is provided
+    if (usedCuisines && usedCuisines.length > 0) {
+      prompt += ` The recipe should be from a cuisine not in this list: ${usedCuisines.join(', ')}.`;
+    }
+
+    // Specify the response format
+    prompt += ` Provide the response in JSON format with the following structure:
+    {
+      "name": "Recipe Name",
+      "cuisine": "Cuisine Type",
+      "ingredients": ["ingredient with quantity"],
+      "instructions": "Detailed steps to prepare the dish."
+    }
+    If no recipe is possible, return:
+    {
+      "name": "",
+      "cuisine": "",
+      "ingredients": [],
+      "instructions": "No recipe possible with these ingredients."
+    }`;
+
+    console.log('Sending prompt to OpenAI:', prompt);
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
         messages: [
-          { role: 'system', content: 'You are a chef specializing in creating diverse recipes from limited ingredients.' },
-          { role: 'user', content: `Generate a concise recipe from a unique cuisine (e.g., Asian, Mexican, Italian, Indian, American, Mediterranean) using ONLY the following ingredients or a subset: ${ingredients.join(', ')}. Ensure the cuisine and cooking style (e.g., stir-fry, grilled, stew) differ from these previously used cuisines: ${usedCuisines.join(', ') || 'none'}. Avoid repeating similar recipes. Do NOT include any additional ingredients. If no recipe is possible, return a message saying so. Return the response as a clean JSON string, without Markdown, backticks, or code blocks. Example: {"name": "Recipe Name", "cuisine": "Cuisine Name", "ingredients": ["ingredient1", "ingredient2"], "instructions": "Step-by-step instructions"}` }
+          {
+            role: 'system',
+            content: 'You are a helpful culinary assistant that provides recipes in JSON format.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
         ],
-        temperature: 0.85,
-        max_tokens: 500
-      })
+        temperature: 0.7,
+        max_tokens: 500,
+      }),
     });
 
     if (!response.ok) {
-      let message = 'Error calling OpenAI API';
-      if (response.status === 429) {
-        message = 'Too many requests to OpenAI API. Please wait and try again.';
-      }
-      throw new Error(`OpenAI API error! Status: ${response.status} - ${message}`);
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({ error: 'Failed to fetch recipe from OpenAI', details: errorData }),
+      };
     }
 
     const data = await response.json();
-    console.log('OpenAI API response:', data); // Debug
+    console.log('OpenAI API response:', data);
+
     return {
       statusCode: 200,
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     };
   } catch (error) {
-    console.error('Error in Netlify Function:', error); // Debug
+    console.error('Error in proxy function:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ error: 'Internal Server Error', details: error.message }),
     };
   }
 };
