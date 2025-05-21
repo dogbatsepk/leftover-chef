@@ -27,7 +27,7 @@ exports.handler = async function(event, context) {
       };
     }
 
-    // Construct the prompt with emphasis on precision, safety, and tips
+    // Construct the prompt with emphasis on precision, safety, and refined tips
     let prompt = `Generate a recipe using the following ingredients: ${ingredients.join(', ')}. Ensure measurements are specific, cooking methods are safe, and the recipe aligns with a ${dietaryPreference} diet (if "none", ignore dietary restrictions).`;
     
     // Add cuisine variety if usedCuisines is provided
@@ -35,14 +35,14 @@ exports.handler = async function(event, context) {
       prompt += ` The recipe should be from a cuisine not in this list: ${usedCuisines.join(', ')}.`;
     }
 
-    // Specify the response format with a Tips section
+    // Specify the response format with refined Tips section
     prompt += ` Provide the response in JSON format with the following structure:
     {
       "name": "Recipe Name",
       "cuisine": "Cuisine Type",
       "ingredients": ["ingredient with quantity"],
       "instructions": "Detailed steps to prepare the dish.",
-      "tips": "Helpful tips for preparation or safety (e.g., 'Tips: Ensure chicken is cooked to an internal temperature of 165°F for safety.')"
+      "tips": "Helpful tips including at least one safety tip (e.g., 'Cook chicken to 165°F') and one preparation tip (e.g., 'Store leftovers in an airtight container for up to 3 days' or 'Serve with a side of rice')."
     }
     If no recipe is possible, return:
     {
