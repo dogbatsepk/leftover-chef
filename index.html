@@ -426,6 +426,23 @@
           });
         });
 
+        if (recipe.tips && recipe.tips.trim()) {
+          y += lineHeight;
+          doc.setFont('helvetica', 'bold');
+          doc.text('Tips:', margin, y);
+          y += lineHeight;
+          doc.setFont('helvetica', 'normal');
+          const tipLines = doc.splitTextToSize(recipe.tips, maxWidth);
+          tipLines.forEach(line => {
+            if (y > pageHeight - 10) {
+              doc.addPage();
+              y = 10;
+            }
+            doc.text(line, margin, y);
+            y += lineHeight;
+          });
+        }
+
         if (index < savedRecipes.length - 1) {
           y += lineHeight;
           if (y > pageHeight - 10) {
@@ -461,6 +478,7 @@
             <p class="text-gray-600 mt-2"><strong>Rating:</strong> ${recipe.rating || 0}/5 <span class="text-yellow-500">${'★'.repeat(recipe.rating || 0)}${'☆'.repeat(5 - (recipe.rating || 0))}</span></p>
             <p class="text-gray-600 mt-2"><strong>Ingredients:</strong> ${recipe.ingredients.join(', ')}</p>
             <p class="text-gray-600 mt-2"><strong>Instructions:</strong> ${recipe.instructions}</p>
+            ${recipe.tips && recipe.tips.trim() ? `<p class="text-gray-600 mt-2"><strong>Tips:</strong> ${recipe.tips}</p>` : ''}
             <button onclick="removeRecipe('${recipe.name}-${recipe.cuisine}'.toLowerCase())" class="mt-2 bg-red-100 text-red-600 px-3 py-1 rounded-lg hover:bg-red-200 btn-hover transition">Remove</button>
           </div>
         `).join('');
@@ -567,6 +585,7 @@
               <p class="text-gray-600 mt-2"><strong>Dietary Preference:</strong> ${dietaryPreference.charAt(0).toUpperCase() + recipe.dietaryPreference.slice(1)} <span class="ml-2 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">${dietEmojis[dietaryPreference]}</span></p>
               <p class="text-gray-600 mt-2"><strong>Ingredients:</strong> ${recipe.ingredients.join(', ')}</p>
               <p class="text-gray-600 mt-2"><strong>Instructions:</strong> ${recipe.instructions}</p>
+              ${recipe.tips && recipe.tips.trim() ? `<p class="text-gray-600 mt-2"><strong>Tips:</strong> ${recipe.tips}</p>` : ''}
               <button onclick="saveRecipeById('${recipeId}')" class="mt-2 bg-green-100 text-green-600 px-3 py-1 rounded-lg hover:bg-green-200 btn-hover transition">Save Recipe</button>
               <p class="save-confirmation hidden absolute top-2 right-2"></p>
               <div class="mt-2 flex items-center space-x-2">

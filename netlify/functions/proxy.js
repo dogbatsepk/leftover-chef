@@ -27,7 +27,7 @@ exports.handler = async function(event, context) {
       };
     }
 
-    // Construct the prompt with emphasis on precision and safety
+    // Construct the prompt with emphasis on precision, safety, and tips
     let prompt = `Generate a recipe using the following ingredients: ${ingredients.join(', ')}. Ensure measurements are specific, cooking methods are safe, and the recipe aligns with a ${dietaryPreference} diet (if "none", ignore dietary restrictions).`;
     
     // Add cuisine variety if usedCuisines is provided
@@ -35,20 +35,22 @@ exports.handler = async function(event, context) {
       prompt += ` The recipe should be from a cuisine not in this list: ${usedCuisines.join(', ')}.`;
     }
 
-    // Specify the response format
+    // Specify the response format with a Tips section
     prompt += ` Provide the response in JSON format with the following structure:
     {
       "name": "Recipe Name",
       "cuisine": "Cuisine Type",
       "ingredients": ["ingredient with quantity"],
-      "instructions": "Detailed steps to prepare the dish."
+      "instructions": "Detailed steps to prepare the dish.",
+      "tips": "Helpful tips for preparation or safety (e.g., 'Tips: Ensure chicken is cooked to an internal temperature of 165°F for safety.')"
     }
     If no recipe is possible, return:
     {
       "name": "",
       "cuisine": "",
       "ingredients": [],
-      "instructions": "No recipe possible with these ingredients."
+      "instructions": "No recipe possible with these ingredients.",
+      "tips": ""
     }`;
 
     console.log('Sending prompt to OpenAI:', prompt);
