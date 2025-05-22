@@ -411,10 +411,15 @@
         doc.text('Instructions:', margin, y);
         y += lineHeight;
         doc.setFont('helvetica', 'normal');
-        const instructions = recipe.instructions
-          .split(/\. (?=\d+\. )|\. (?=[A-Z])|\.\s*$/)
-          .filter(step => step.trim() && !/^\d+\.$/.test(step.trim()))
-          .map(step => step.trim() + (step.trim().endsWith('.') ? '' : '.'));
+        // Remove existing numbering (e.g., "1.", "2.") from the instruction string
+        const cleanInstructions = recipe.instructions.replace(/\d+\.\s*/g, '');
+        // Split into steps, filter out empty or invalid steps, and ensure proper formatting
+        const instructions = cleanInstructions
+          .split(/\. (?=[A-Z])|\.\s*$/)
+          .map(step => step.trim())
+          .filter(step => step && !step.match(/^\s*$/) && !step.match(/^\d+\.$/))
+          .map(step => step + (step.endsWith('.') ? '' : '.'));
+        // Apply sequential numbering to each step
         instructions.forEach((step, idx) => {
           const numberedStep = `${idx + 1}. ${step}`;
           const lines = doc.splitTextToSize(numberedStep, maxWidth - 5);
