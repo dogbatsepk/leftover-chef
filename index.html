@@ -413,9 +413,12 @@
         doc.setFont('helvetica', 'normal');
         // Remove existing numbering (e.g., "1.", "2.") from the instruction string
         const cleanInstructions = recipe.instructions.replace(/\d+\.\s*/g, '');
-        // Split into steps based on periods followed by a new sentence or end of string
-        const instructions = cleanInstructions
-          .split(/\. (?=[A-Z])|\.\s*$/)
+        console.log('Cleaned instructions:', cleanInstructions);
+        // Normalize spacing after periods to ensure proper splitting
+        const normalizedInstructions = cleanInstructions.replace(/\.([A-Z])/g, '. $1');
+        // Split into steps based on periods, considering sentence boundaries
+        const instructions = normalizedInstructions
+          .split(/\.\s*(?=[A-Z])|\.\s*$/)
           .map(step => step.trim())
           .filter(step => step && !step.match(/^\s*$/)); // Filter out only truly empty steps
         console.log('Instructions array:', instructions); // Debug log to verify steps
