@@ -418,6 +418,7 @@
           .split(/\. (?=[A-Z])|\.\s*$/)
           .map(step => step.trim())
           .filter(step => step && !step.match(/^\s*$/)); // Filter out only truly empty steps
+        console.log('Instructions array:', instructions); // Debug log to verify steps
         // Apply sequential numbering to each step
         instructions.forEach((step, idx) => {
           const numberedStep = `${idx + 1}. ${step}${!step.endsWith('.') ? '.' : ''}`;
