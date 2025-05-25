@@ -155,6 +155,7 @@
     let usedCuisines = [];
     let generatedRecipes = [];
     const maxRecipes = 5;
+    let savedRecipesArray = []; // Array to store saved recipes for download
 
     // Cuisine to emoji mapping
     const cuisineEmojis = {
@@ -362,93 +363,93 @@
     }
 
     // Download a single recipe as PDF
-    function downloadSingleRecipe(recipeStr) {
-      console.log('downloadSingleRecipe called with string:', recipeStr);
-      try {
-        const recipe = JSON.parse(recipeStr);
-        console.log('Parsed recipe object:', recipe);
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        let y = 10;
-        const margin = 10;
-        const lineHeight = 5;
-        const pageHeight = 297;
-        const maxWidth = 190;
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        doc.text(`Recipe: ${recipe.name}`, margin, y);
-        y += lineHeight;
-
-        doc.setFontSize(10);
-        doc.text(`Cuisine: ${recipe.cuisine}`, margin, y);
-        y += lineHeight;
-
-        doc.text(`Dietary Preference: ${recipe.dietaryPreference.charAt(0).toUpperCase() + recipe.dietaryPreference.slice(1)}`, margin, y);
-        y += lineHeight;
-
-        doc.text(`Rating: ${recipe.rating || 0}/5`, margin, y);
-        y += lineHeight;
-
-        doc.text('Ingredients:', margin, y);
-        y += lineHeight;
-        doc.setFont('helvetica', 'normal');
-        recipe.ingredients.forEach(ing => {
-          doc.text(`• ${ing}`, margin + 5, y);
-          y += lineHeight;
-        });
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('Instructions:', margin, y);
-        y += lineHeight;
-        doc.setFont('helvetica', 'normal');
-        const cleanInstructions = recipe.instructions.replace(/\d+\.\s*/g, '');
-        const normalizedInstructions = cleanInstructions.replace(/\.([A-Z])/g, '. $1');
-        const instructions = normalizedInstructions
-          .split(/\.\s*(?=[A-Z])|\.\s*$/)
-          .map(step => step.trim())
-          .filter(step => step && !step.match(/^\s*$/));
-        instructions.forEach((step, idx) => {
-          const numberedStep = `${idx + 1}. ${step}${!step.endsWith('.') ? '.' : ''}`;
-          const lines = doc.splitTextToSize(numberedStep, maxWidth - 5);
-          lines.forEach(line => {
-            if (y > pageHeight - 10) {
-              doc.addPage();
-              y = 10;
-            }
-            doc.text(line, margin + 5, y);
-            y += lineHeight;
-          });
-        });
-
-        if (recipe.tips && recipe.tips.trim()) {
-          y += lineHeight;
-          doc.setFont('helvetica', 'bold');
-          doc.text('Tips', margin, y);
-          y += lineHeight;
-          doc.setFont('helvetica', 'normal');
-          const tipLines = doc.splitTextToSize(recipe.tips.replace(/^Tips: /, ''), maxWidth);
-          tipLines.forEach(line => {
-            if (y > pageHeight - 10) {
-              doc.addPage();
-              y = 10;
-            }
-            doc.text(line, margin, y);
-            y += lineHeight;
-          });
-        }
-
-        doc.save(`${recipe.name.replace(/[^a-zA-Z0-9\s]/g, '')}.pdf`);
-        console.log('Successfully downloaded single recipe as PDF:', recipe.name);
-      } catch (e) {
-        console.error('Error in downloadSingleRecipe:', e);
+    function downloadSingleRecipe(index) {
+      console.log('downloadSingleRecipe called with index:', index);
+      const recipe = savedRecipesArray[index];
+      if (!recipe) {
+        console.error('Recipe not found at index:', index);
+        return;
       }
+      console.log('Downloading recipe:', recipe.name);
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      let y = 10;
+      const margin = 10;
+      const lineHeight = 5;
+      const pageHeight = 297;
+      const maxWidth = 190;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text(`Recipe: ${recipe.name}`, margin, y);
+      y += lineHeight;
+
+      doc.setFontSize(10);
+      doc.text(`Cuisine: ${recipe.cuisine}`, margin, y);
+      y += lineHeight;
+
+      doc.text(`Dietary Preference: ${recipe.dietaryPreference.charAt(0).toUpperCase() + recipe.dietaryPreference.slice(1)}`, margin, y);
+      y += lineHeight;
+
+      doc.text(`Rating: ${recipe.rating || 0}/5`, margin, y);
+      y += lineHeight;
+
+      doc.text('Ingredients:', margin, y);
+      y += lineHeight;
+      doc.setFont('helvetica', 'normal');
+      recipe.ingredients.forEach(ing => {
+        doc.text(`• ${ing}`, margin + 5, y);
+        y += lineHeight;
+      });
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Instructions:', margin, y);
+      y += lineHeight;
+      doc.setFont('helvetica', 'normal');
+      const cleanInstructions = recipe.instructions.replace(/\d+\.\s*/g, '');
+      const normalizedInstructions = cleanInstructions.replace(/\.([A-Z])/g, '. $1');
+      const instructions = normalizedInstructions
+        .split(/\.\s*(?=[A-Z])|\.\s*$/)
+        .map(step => step.trim())
+        .filter(step => step && !step.match(/^\s*$/));
+      instructions.forEach((step, idx) => {
+        const numberedStep = `${idx + 1}. ${step}${!step.endsWith('.') ? '.' : ''}`;
+        const lines = doc.splitTextToSize(numberedStep, maxWidth - 5);
+        lines.forEach(line => {
+          if (y > pageHeight - 10) {
+            doc.addPage();
+            y = 10;
+          }
+          doc.text(line, margin + 5, y);
+          y += lineHeight;
+        });
+      });
+
+      if (recipe.tips && recipe.tips.trim()) {
+        y += lineHeight;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Tips', margin, y);
+        y += lineHeight;
+        doc.setFont('helvetica', 'normal');
+        const tipLines = doc.splitTextToSize(recipe.tips.replace(/^Tips: /, ''), maxWidth);
+        tipLines.forEach(line => {
+          if (y > pageHeight - 10) {
+            doc.addPage();
+            y = 10;
+          }
+          doc.text(line, margin, y);
+          y += lineHeight;
+        });
+      }
+
+      doc.save(`${recipe.name.replace(/[^a-zA-Z0-9\s]/g, '')}.pdf`);
+      console.log('Successfully downloaded single recipe as PDF:', recipe.name);
     }
 
     // Wrapper function to handle individual download
-    function triggerDownload(recipeStr) {
-      console.log('triggerDownload called with:', recipeStr);
-      downloadSingleRecipe(recipeStr);
+    function triggerDownload(index) {
+      console.log('triggerDownload called with index:', index);
+      downloadSingleRecipe(index);
     }
 
     // Download all saved recipes as PDF
@@ -560,11 +561,14 @@
       const downloadButton = document.getElementById('downloadRecipes');
       const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
 
+      // Update the global savedRecipesArray
+      savedRecipesArray = savedRecipes;
+
       if (savedRecipes.length > 0) {
         savedRecipesDiv.classList.remove('hidden');
         downloadButton.disabled = false;
         downloadButton.classList.remove('opacity-50', 'cursor-not-allowed');
-        savedRecipesList.innerHTML = savedRecipes.map(recipe => `
+        savedRecipesList.innerHTML = savedRecipes.map((recipe, index) => `
           <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 animate-fade-in-up">
             <h3 class="text-lg font-bold text-gray-800">${recipe.name}</h3>
             <p class="text-gray-600 mt-2"><strong>Cuisine:</strong> ${recipe.cuisine} <span class="ml-2 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">${cuisineEmojis[recipe.cuisine] || '🍴'}</span></p>
@@ -574,7 +578,7 @@
             <p class="text-gray-600 mt-2"><strong>Instructions:</strong> ${recipe.instructions}</p>
             ${recipe.tips && recipe.tips.trim() ? `<p class="text-gray-600 mt-2 bg-yellow-50 p-2 rounded-lg border border-gray-200"><strong>Tips:</strong> ${recipe.tips.replace(/^Tips: /, '')}</p>` : ''}
             <button onclick="removeRecipe('${recipe.name}-${recipe.cuisine}'.toLowerCase())" class="mt-2 bg-red-100 text-red-600 px-3 py-1 rounded-lg hover:bg-red-200 btn-hover transition">Remove</button>
-            <button onclick="triggerDownload('${JSON.stringify(recipe)}')" class="mt-2 ml-2 bg-blue-100 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-200 btn-hover transition">Download PDF</button>
+            <button onclick="triggerDownload(${index})" class="mt-2 ml-2 bg-blue-100 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-200 btn-hover transition">Download PDF</button>
           </div>
         `).join('');
       } else {
